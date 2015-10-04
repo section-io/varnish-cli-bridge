@@ -2,6 +2,8 @@ package main
 
 import (
 	"bufio"
+	"crypto/sha256"
+	"encoding/hex"
 	"flag"
 	"fmt"
 	"io"
@@ -33,7 +35,7 @@ const (
 
 var listenAddress = ":6082"
 var apiEndpoint = "http://httpbin.org/"
-var secretFile = "/etc/varnish/default"
+var secretFile = "/etc/varnish/secret"
 
 func configure() {
 	const envKeyPrefix = "VARNISH_CLI_BRIDGE_" // maybe allow override via command-line?
@@ -100,8 +102,9 @@ func writeVarnishCliResponse(writer io.Writer, status VarnishCliResponseStatus, 
 	}
 }
 
+const randomChallenge = "abcdefghijabcdefghijabcdefghijkl" // TODO randomise on each attempt
+
 func writeVarnishCliAuthenticationChallenge(writer io.Writer) {
-	randomChallenge := "abcdefghijabcdefghijabcdefghijkl" // TODO randomise
 	writeVarnishCliResponse(writer, CLIS_AUTH, randomChallenge)
 }
 
@@ -109,9 +112,30 @@ func handleVarnishCliAuthenticationAttempt(args string, writer io.Writer) {
 
 	log.Printf("Auth attempt '%s'", args)
 
-	// TODO verify secret, if auth failed, resend challenge
+	file, err := os.Open(secretFile)
+	if err != nil {
+		log.Panicf("Failed to open secret file '%s':\n%v", secretFile, err)
+	}
+	defer file.Close()
+	secretBytes, err := ioutil.ReadAll(file)
+	if err != nil {
+		log.Panicf("Failed to read secret file '%s':\n%v", secretFile, err)
+	}
+	// TODO close file sooner, ie here
 
-	writeVarnishCliResponse(writer, CLIS_OK, "Welcome")
+	hash := sha256.New()
+	hash.Write([]byte(randomChallenge + "\n"))
+	hash.Write(secretBytes)
+	hash.Write([]byte(randomChallenge + "\n"))
+
+	expectedAuthResponse := hex.EncodeToString(hash.Sum(nil))
+
+	// TODO allow whitespace-trimmed and case-insensitive compare of hex
+	if strings.ToLower(args) == expectedAuthResponse {
+		writeVarnishCliResponse(writer, CLIS_OK, "Welcome")
+	} else {
+		writeVarnishCliAuthenticationChallenge(writer)
+	}
 
 }
 
