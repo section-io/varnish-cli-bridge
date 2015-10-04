@@ -11,7 +11,9 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"net/url"
 	"os"
+	"regexp"
 	"strings"
 	"time"
 )
@@ -33,26 +35,67 @@ const (
 	CLIS_CLOSE                              = 500
 )
 
-var listenAddress = ":6082"
-var apiEndpoint = "http://httpbin.org/"
-var secretFile = "/etc/varnish/secret"
+var (
+	sectionioApiEndpointRx = regexp.MustCompile("^https?://")
+	httpClient             = &http.Client{}
+
+	listenAddress = ":6082"
+	secretFile    = "/etc/varnish/secret"
+
+	// eg "https://aperture.section.io/api/v1/account/1/application/1/state"
+	sectionioApiEndpoint string
+	sectionioUsername    string
+	sectionioPassword    string
+	sectionioProxyName   = "varnish"
+)
 
 func configure() {
-	const envKeyPrefix = "VARNISH_CLI_BRIDGE_" // maybe allow override via command-line?
+	const cliEnvKeyPrefix = "VARNISH_CLI_BRIDGE_"
+	const sectionioEnvKeyPrefix = "SECTION_IO_"
 
-	envListenAddress := os.Getenv(envKeyPrefix + "LISTEN_ADDRESS")
+	envListenAddress := os.Getenv(cliEnvKeyPrefix + "LISTEN_ADDRESS")
 	if envListenAddress != "" {
 		listenAddress = envListenAddress
 	}
 	flag.StringVar(&listenAddress, "listen-address", listenAddress,
 		"Address and port to listen for inbound Varnish CLI connections.")
 
-	envSecretFile := os.Getenv(envKeyPrefix + "SECRET_FILE")
+	envSecretFile := os.Getenv(cliEnvKeyPrefix + "SECRET_FILE")
 	if envSecretFile != "" {
 		secretFile = envSecretFile
 	}
 	flag.StringVar(&secretFile, "secret-file", secretFile,
 		"Path to file containing the Varnish CLI authentication secret.")
+
+	envApiEndpoint := os.Getenv(sectionioEnvKeyPrefix + "API_ENDPOINT")
+	if envApiEndpoint != "" {
+		if sectionioApiEndpointRx.MatchString(envApiEndpoint) {
+			sectionioApiEndpoint = envApiEndpoint
+		} else {
+			log.Fatal(sectionioEnvKeyPrefix + "API_ENDPOINT variable is invalid.")
+		}
+	}
+	flag.StringVar(&sectionioApiEndpoint, "api-endpoint", sectionioApiEndpoint,
+		"The absolute section.io application state POST url with account and application IDs.")
+
+	envUsername := os.Getenv(sectionioEnvKeyPrefix + "USERNAME")
+	if envUsername != "" {
+		sectionioUsername = envUsername
+	}
+	flag.StringVar(&sectionioUsername, "username", "",
+		"The section.io username to use for API requests.")
+
+	sectionioPassword := os.Getenv(sectionioEnvKeyPrefix + "PASSWORD")
+	if sectionioPassword == "" {
+		log.Fatal(sectionioEnvKeyPrefix + "PASSWORD environment variable is required.")
+	}
+
+	envProxyName := os.Getenv(sectionioEnvKeyPrefix + "PROXY_NAME")
+	if envProxyName != "" {
+		sectionioProxyName = envProxyName
+	}
+	flag.StringVar(&sectionioProxyName, "proxy-name", sectionioProxyName,
+		"The section.io Varnish proxy name to target for API requests.")
 
 	help := flag.Bool("help", false, "Display this help.")
 	flag.Parse()
@@ -60,6 +103,16 @@ func configure() {
 	if *help {
 		flag.PrintDefaults()
 		os.Exit(1)
+	}
+
+	if !sectionioApiEndpointRx.MatchString(sectionioApiEndpoint) {
+		log.Fatal("api-endpoint argument is invalid.")
+	}
+	if sectionioUsername == "" {
+		log.Fatal("section.io username is required.")
+	}
+	if sectionioProxyName == "" {
+		log.Fatal("section.io proxy name is required.")
 	}
 
 	log.Printf("Using Varnish CLI secret file '%s'.", secretFile)
@@ -94,11 +147,9 @@ func writeVarnishCliResponse(writer io.Writer, status VarnishCliResponseStatus, 
 	statusLine := fmt.Sprintf("%3d %8d\n", status, responseLength)
 	buffer := []byte(statusLine + body + "\n")
 
-	bytesWritten, err := writer.Write(buffer)
+	_, err := writer.Write(buffer)
 	if err != nil {
 		log.Panic(err)
-	} else {
-		log.Printf("Wrote %d bytes", bytesWritten)
 	}
 }
 
@@ -144,6 +195,50 @@ func handleVarnishCliPingRequest(writer io.Writer) {
 	writeVarnishCliResponse(writer, CLIS_OK, response)
 }
 
+func handleVarnishCliBanRequest(args string, writer io.Writer) {
+
+	postValues := url.Values{
+		"proxy": {sectionioProxyName},
+		"ban":   {args},
+	}
+	requestBody := strings.NewReader(postValues.Encode())
+
+	request, err := http.NewRequest("POST", sectionioApiEndpoint, requestBody)
+	if err != nil {
+		log.Printf("Error composing ban request: %v", err)
+		writeVarnishCliResponse(writer, CLIS_CANT, "Failed to compose the API request.")
+		return
+	}
+	request.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	request.SetBasicAuth(sectionioUsername, sectionioPassword)
+
+	response, err := httpClient.Do(request)
+	if err != nil {
+		log.Printf("Error posting ban request '%s': %v", args, err)
+		writeVarnishCliResponse(writer, CLIS_CANT, "Failed to forward the ban.")
+		return
+	}
+	defer response.Body.Close()
+	responseBodyBytes, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		log.Printf("Error reading ban API response: %v", err)
+		writeVarnishCliResponse(writer, CLIS_CANT, "Failed to parse the API response.")
+		return
+	}
+
+	if response.StatusCode == 200 {
+		writeVarnishCliResponse(writer, CLIS_OK, "Ban forwarded.")
+		return
+	}
+
+	log.Printf("Unexpected API response status: %d, body: %v",
+		response.StatusCode,
+		string(responseBodyBytes))
+
+	writeVarnishCliResponse(writer, CLIS_CANT,
+		fmt.Sprintf("API responded with status %d.", response.StatusCode))
+}
+
 func handleRequest(requestLine string, writer io.Writer) {
 	requestLine = strings.TrimLeft(requestLine, " ")
 	commandAndArgs := strings.SplitN(requestLine, " ", 2)
@@ -159,6 +254,12 @@ func handleRequest(requestLine string, writer io.Writer) {
 		return
 	case "ping":
 		handleVarnishCliPingRequest(writer)
+		return
+	case "ban":
+		handleVarnishCliBanRequest(commandAndArgs[1], writer)
+		return
+	case "ban.url":
+		handleVarnishCliBanRequest("req.url ~ "+commandAndArgs[1], writer)
 		return
 	}
 
@@ -184,12 +285,4 @@ func handleConnection(connection net.Conn) {
 	if err != nil {
 		log.Print(err)
 	}
-
-	response, err := http.Get(apiEndpoint)
-	if err != nil {
-		log.Print(err)
-		return
-	}
-	defer response.Body.Close()
-	_, err = ioutil.ReadAll(response.Body)
 }
