@@ -63,11 +63,13 @@ func readVarnishCliAuthenticationAttempt(connection net.Conn) error {
 	bytesRead, err := connection.Read(buffer)
 	if err != nil {
 		log.Print(err)
+		return err
 	}
 	log.Printf("read %d bytes", bytesRead)
 
 	// TODO verify secret
 
+	return nil
 }
 
 func handleConnection(connection net.Conn) {
