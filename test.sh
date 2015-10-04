@@ -8,7 +8,7 @@ secret_file=/tmp/test-secret
 
 cat /proc/sys/kernel/random/uuid >$secret_file
 
-$GOPATH/bin/varnish-cli-bridge &
+$GOPATH/bin/varnish-cli-bridge -listen-address :6083 &
 proxy_pid=$!
 
 sleep 2 # allow time for proxy to begin listening

@@ -2,12 +2,14 @@ package main
 
 import (
 	"bufio"
+	"flag"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"log"
 	"net"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 )
@@ -29,20 +31,48 @@ const (
 	CLIS_CLOSE                              = 500
 )
 
-var listenPort = 6083 // normally 6082
+var listenAddress = ":6082"
 var apiEndpoint = "http://httpbin.org/"
+var secretFile = "/etc/varnish/default"
+
+func configure() {
+	const envKeyPrefix = "VARNISH_CLI_BRIDGE_" // maybe allow override via command-line?
+
+	envListenAddress := os.Getenv(envKeyPrefix + "LISTEN_ADDRESS")
+	if envListenAddress != "" {
+		listenAddress = envListenAddress
+	}
+	flag.StringVar(&listenAddress, "listen-address", listenAddress,
+		"Address and port to listen for inbound Varnish CLI connections.")
+
+	envSecretFile := os.Getenv(envKeyPrefix + "SECRET_FILE")
+	if envSecretFile != "" {
+		secretFile = envSecretFile
+	}
+	flag.StringVar(&secretFile, "secret-file", secretFile,
+		"Path to file containing the Varnish CLI authentication secret.")
+
+	help := flag.Bool("help", false, "Display this help.")
+	flag.Parse()
+
+	if *help {
+		flag.PrintDefaults()
+		os.Exit(1)
+	}
+
+	log.Printf("Using Varnish CLI secret file '%s'.", secretFile)
+}
 
 func main() {
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 
-	//port := flag.String("port", "6082", "Default listen port")
-	//flag.Parse()
+	configure()
 
-	listener, err := net.Listen("tcp", fmt.Sprintf(":%d", listenPort))
+	log.Printf("Listening on '%s'.", listenAddress)
+	listener, err := net.Listen("tcp", listenAddress)
 	if err != nil {
 		log.Fatal(err)
 	}
-	log.Printf("Listening on port %d", listenPort)
 
 	for {
 		connection, err := listener.Accept()
