@@ -37,7 +37,9 @@ const (
 
 var (
 	sectionioApiEndpointRx = regexp.MustCompile("^https?://")
-	httpClient             = &http.Client{}
+	httpClient             = &http.Client{
+		Timeout: time.Minute,
+	}
 
 	listenAddress = ":6082"
 	secretFile    = "/etc/varnish/secret"
