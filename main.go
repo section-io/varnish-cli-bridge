@@ -2,8 +2,10 @@ package main
 
 import (
 	"bufio"
+	"bytes"
 	"crypto/sha256"
 	"encoding/hex"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"io"
@@ -11,7 +13,6 @@ import (
 	"log"
 	"net"
 	"net/http"
-	"net/url"
 	"os"
 	"regexp"
 	"strings"
@@ -34,6 +35,11 @@ const (
 	CLIS_COMMS                              = 400
 	CLIS_CLOSE                              = 500
 )
+
+type JsonBanRequest struct {
+	Proxy string `json:"proxy"`
+	Ban   string `json:"ban"`
+}
 
 var (
 	sectionioApiEndpointRx = regexp.MustCompile("^https?://")
@@ -199,19 +205,24 @@ func handleVarnishCliPingRequest(writer io.Writer) {
 
 func handleVarnishCliBanRequest(args string, writer io.Writer) {
 
-	postValues := url.Values{
-		"proxy": {sectionioProxyName},
-		"ban":   {args},
+	postValues := &JsonBanRequest{
+		Proxy: sectionioProxyName,
+		Ban:   args,
 	}
-	requestBody := strings.NewReader(postValues.Encode())
+	requestBody, err := json.Marshal(postValues)
+	if err != nil {
+		log.Printf("Error serialising ban request to JSON: %v", err)
+		writeVarnishCliResponse(writer, CLIS_CANT, "Failed to serialise the API request.")
+		return
+	}
 
-	request, err := http.NewRequest("POST", sectionioApiEndpoint, requestBody)
+	request, err := http.NewRequest("POST", sectionioApiEndpoint, bytes.NewReader(requestBody))
 	if err != nil {
 		log.Printf("Error composing ban request: %v", err)
 		writeVarnishCliResponse(writer, CLIS_CANT, "Failed to compose the API request.")
 		return
 	}
-	request.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	request.Header.Set("Content-Type", "application/json")
 	request.SetBasicAuth(sectionioUsername, sectionioPassword)
 
 	response, err := httpClient.Do(request)
