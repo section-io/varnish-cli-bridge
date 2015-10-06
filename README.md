@@ -1,11 +1,11 @@
-= Varnish CLI Bridge
+# Varnish CLI Bridge
 
 This program will listen for incoming connections from `varnishadm` and other
 Varnish Cache CLI clients and relay `ban` requests to all Varnish Cache
 instances for a given section.io-hosted Varnish by forwarding the request
 to the section.io API.
 
-== Required Configuration
+## Required Configuration
 
 The Varnish CLI Bridge has some mandatory configuration requirements:
 
@@ -26,7 +26,7 @@ configured via the `SECTION_IO_PASSWORD` environment variable. Providing
 passwords on the command line is not recommended in general and not supported
 by the Varnish CLI Bridge.
 
-== Optional Configuration
+## Optional Configuration
 
 The Varnish CLI Bridge also has some optional configuration that can be
 specified if the defaults are not suitable:
@@ -48,19 +48,19 @@ Varnish CLI Bridge should listen for incoming connections. Format is
 `[IP]:PORT` and the default is `:6082` if not provided. Omitting the IP results
 in binding to all interfaces (ie `INADDR_ANY`).
 
-== Supported commands
+## Supported commands
 
 The Varnish CLI Bridge does not implement every command yet and some are not
 planned to be implemented.
 
-Implemented now:
+### Implemented now:
 
 * `auth`
 * `ban`
 * `ban.url` (via automatic rewriting to `ban`)
 * `ping`
 
-May be implemented later (in no particular order):
+### May be implemented later (in no particular order):
 
 * `banner`
 * `backend.list`
@@ -72,7 +72,7 @@ May be implemented later (in no particular order):
 * `vcl.list`
 * `vcl.show`
 
-Implementation not planned:
+### Implementation not planned:
 
 * `backend.set_health`
 * `param.set`
