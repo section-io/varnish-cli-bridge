@@ -124,6 +124,9 @@ func configure() {
 	}
 
 	log.Printf("Using Varnish CLI secret file '%s'.", secretFile)
+	log.Printf("Using API endpoint '%s'.", sectionioApiEndpoint)
+	log.Printf("Using API proxy name '%s'.", sectionioProxyName)
+	log.Printf("Using API username '%s'.", sectionioUsername)
 }
 
 func main() {
