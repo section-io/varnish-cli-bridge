@@ -87,7 +87,7 @@ func configure() {
 	flag.StringVar(&sectionioUsername, "username", "",
 		"The section.io username to use for API requests.")
 
-	sectionioPassword := os.Getenv(sectionioEnvKeyPrefix + "PASSWORD")
+	sectionioPassword = os.Getenv(sectionioEnvKeyPrefix + "PASSWORD")
 	if sectionioPassword == "" {
 		log.Fatal(sectionioEnvKeyPrefix + "PASSWORD environment variable is required.")
 	}
