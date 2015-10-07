@@ -1,4 +1,4 @@
-package main
+package main // import "github.com/section-io/varnish-cli-bridge"
 
 import (
 	"bufio"
@@ -243,6 +243,8 @@ func handleVarnishCliBanRequest(args string, writer io.Writer) {
 	}
 
 	if response.StatusCode == 200 {
+		// TODO parse response body as JSON, expect:
+		// {"success":true,"description":"Ban applied"}
 		writeVarnishCliResponse(writer, CLIS_OK, "Ban forwarded.")
 		return
 	}
