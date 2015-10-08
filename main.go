@@ -50,6 +50,10 @@ var (
 	listenAddress = ":6082"
 	secretFile    = "/etc/varnish/secret"
 
+	// nexcess/magento-turpentine checks the banner text to determine the ban syntax
+	// TODO make version configurable, or query from section.io API
+	bannerVarnishVersion = "varnish-3.0.0 revision 0000000"
+
 	// eg "https://aperture.section.io/api/v1/account/1/application/1/state"
 	sectionioApiEndpoint string
 	sectionioUsername    string
@@ -170,6 +174,20 @@ func writeVarnishCliAuthenticationChallenge(writer io.Writer) {
 	writeVarnishCliResponse(writer, CLIS_AUTH, randomChallenge)
 }
 
+func writeVarnishCliBanner(writer io.Writer) {
+	// emulate the normal banner Varnish for client-compatibility.
+	bannerFormat := `-----------------------------
+Varnish Cache CLI Bridge
+-----------------------------
+https://github.com/section-io/varnish-cli-bridge
+%s
+
+Type 'help' for command list.
+Type 'quit' to close CLI session.`
+
+	writeVarnishCliResponse(writer, CLIS_OK, fmt.Sprintf(bannerFormat, bannerVarnishVersion))
+}
+
 func handleVarnishCliAuthenticationAttempt(args string, writer io.Writer) {
 
 	log.Printf("Auth attempt '%s'", args)
@@ -194,7 +212,7 @@ func handleVarnishCliAuthenticationAttempt(args string, writer io.Writer) {
 
 	// TODO allow whitespace-trimmed and case-insensitive compare of hex
 	if strings.ToLower(args) == expectedAuthResponse {
-		writeVarnishCliResponse(writer, CLIS_OK, "Welcome")
+		writeVarnishCliBanner(writer)
 	} else {
 		writeVarnishCliAuthenticationChallenge(writer)
 	}
@@ -267,6 +285,9 @@ func handleRequest(requestLine string, writer io.Writer) {
 	}
 
 	switch command {
+	case "banner":
+		writeVarnishCliBanner(writer)
+		return
 	case "auth":
 		handleVarnishCliAuthenticationAttempt(commandAndArgs[1], writer)
 		return
