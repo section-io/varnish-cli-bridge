@@ -31,5 +31,10 @@ exit_code=0 ; varnishadm -S $secret_file -T :6083 "ban req.url == /dummy" >$stdo
 echo $exit_code
 cat $stdout_file $stderr_file
 
+echo TEST banner
+exit_code=0 ; varnishadm -S $secret_file -T :6083 banner >$stdout_file 2>$stderr_file || exit_code=$?
+echo $exit_code
+cat $stdout_file $stderr_file
+
 kill -s SIGTERM $proxy_pid
 wait
