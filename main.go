@@ -215,16 +215,18 @@ func handleVarnishCliAuthenticationAttempt(args string, session *VarnishCliSessi
 
 	log.Printf("Auth attempt '%s'", args)
 
-	file, err := os.Open(secretFile)
-	if err != nil {
-		log.Panicf("Failed to open secret file '%s':\n%v", secretFile, err)
-	}
-	defer file.Close()
-	secretBytes, err := ioutil.ReadAll(file)
-	if err != nil {
-		log.Panicf("Failed to read secret file '%s':\n%v", secretFile, err)
-	}
-	// TODO close file sooner, ie here
+	var secretBytes []byte
+	func() {
+		file, err := os.Open(secretFile)
+		if err != nil {
+			log.Panicf("Failed to open secret file '%s':\n%v", secretFile, err)
+		}
+		defer file.Close()
+		secretBytes, err = ioutil.ReadAll(file)
+		if err != nil {
+			log.Panicf("Failed to read secret file '%s':\n%v", secretFile, err)
+		}
+	}()
 
 	hash := sha256.New()
 	hash.Write([]byte(session.AuthChallenge + "\n"))
@@ -276,13 +278,17 @@ func handleVarnishCliBanRequest(args string, writer io.Writer) {
 		writeVarnishCliResponse(writer, CLIS_CANT, "Failed to forward the ban.")
 		return
 	}
-	defer response.Body.Close()
-	responseBodyBytes, err := ioutil.ReadAll(response.Body)
-	if err != nil {
-		log.Printf("Error reading ban API response: %v", err)
-		writeVarnishCliResponse(writer, CLIS_CANT, "Failed to parse the API response.")
-		return
-	}
+	var responseBodyText string
+	func() {
+		defer response.Body.Close()
+		responseBodyBytes, err := ioutil.ReadAll(response.Body)
+		if err != nil {
+			log.Printf("Error reading ban API response: %v", err)
+			writeVarnishCliResponse(writer, CLIS_CANT, "Failed to parse the API response.")
+			return
+		}
+		responseBodyText = string(responseBodyBytes)
+	}()
 
 	if response.StatusCode == 200 {
 		// TODO parse response body as JSON, expect:
@@ -293,7 +299,7 @@ func handleVarnishCliBanRequest(args string, writer io.Writer) {
 
 	log.Printf("Unexpected API response status: %d, body: %v",
 		response.StatusCode,
-		string(responseBodyBytes))
+		responseBodyText)
 
 	writeVarnishCliResponse(writer, CLIS_CANT,
 		fmt.Sprintf("API responded with status %d.", response.StatusCode))
