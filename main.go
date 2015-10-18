@@ -173,6 +173,7 @@ func writeVarnishCliResponse(writer io.Writer, status VarnishCliResponseStatus, 
 	if err != nil {
 		log.Panic(err)
 	}
+	log.Printf("Sent response '%s'", string(buffer))
 }
 
 func writeVarnishCliAuthenticationChallenge(session *VarnishCliSession) {
@@ -212,8 +213,6 @@ func handleVarnishCliAuthenticationAttempt(args string, session *VarnishCliSessi
 		writeVarnishCliResponse(session.Writer, CLIS_CANT, "Authentication challenge not initialised.")
 		return
 	}
-
-	log.Printf("Auth attempt '%s'", args)
 
 	var secretBytes []byte
 	func() {
@@ -307,6 +306,8 @@ func handleVarnishCliBanRequest(args string, writer io.Writer) {
 
 func handleRequest(requestLine string, session *VarnishCliSession) {
 	requestLine = strings.TrimLeft(requestLine, " ")
+	log.Printf("Received request '%s'", requestLine)
+
 	commandAndArgs := strings.SplitN(requestLine, " ", 2)
 	command := commandAndArgs[0]
 	if command != strings.ToLower(command) {
