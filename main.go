@@ -166,7 +166,7 @@ func main() {
 
 func writeVarnishCliResponse(writer io.Writer, status VarnishCliResponseStatus, body string) {
 	responseLength := len(body) // NOTE len() returns byte count, not character count
-	statusLine := fmt.Sprintf("%3d %8d\n", status, responseLength)
+	statusLine := fmt.Sprintf("%3d %-8d\n", status, responseLength)
 	buffer := []byte(statusLine + body + "\n")
 
 	_, err := writer.Write(buffer)
