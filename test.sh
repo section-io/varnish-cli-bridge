@@ -10,7 +10,14 @@ wrong_secret_file=/tmp/test-wrong-secret
 cat /proc/sys/kernel/random/uuid >$secret_file
 cat /proc/sys/kernel/random/uuid >$wrong_secret_file
 
+echo 'INIT executing `go test`'
+go test github.com/section-io/varnish-cli-bridge || {
+  echo 'Failed to compile and test.'
+  exit 1
+}
+
 echo INIT launching bridge
+#NOTE `go test` appears to install to $GOPATH/bin
 SECTION_IO_PASSWORD=P@ssw0rd $GOPATH/bin/varnish-cli-bridge \
   -listen-address :6083 \
   -secret-file "${secret_file}" \
