@@ -1,40 +1,48 @@
 #!/usr/bin/env bash
-set -o xtrace
+#set -o xtrace DEBUG
 set -o errexit
 
 stdout_file=/tmp/test-output
 stderr_file=/tmp/test-error
 secret_file=/tmp/test-secret
+wrong_secret_file=/tmp/test-wrong-secret
 
 cat /proc/sys/kernel/random/uuid >$secret_file
+cat /proc/sys/kernel/random/uuid >$wrong_secret_file
 
+echo INIT launching bridge
 SECTION_IO_PASSWORD=P@ssw0rd $GOPATH/bin/varnish-cli-bridge \
   -listen-address :6083 \
   -secret-file "${secret_file}" \
   -api-endpoint http://httpbin.org/post \
-  -username testuser &
+  -username testuser >/tmp/bridge-output 2>/tmp/bridge-error &
 proxy_pid=$!
 
 sleep 2 # allow time for proxy to begin listening
 
-echo TEST needs auth
+function finally {
+  echo DONE terminating bridge
+  kill -s SIGTERM $proxy_pid
+  wait
+}
+trap finally EXIT
+
+echo -n TEST expects auth ...
 exit_code=0 ; varnishadm -T :6083 ping >$stdout_file 2>$stderr_file || exit_code=$?
-grep --fixed 'Authentication required' $stderr_file || echo FAILED
+grep --quiet --fixed-strings 'Authentication required' $stderr_file && echo PASS || echo FAIL
 
-echo TEST needs auth
+echo -n TEST wrong auth fails ...
+exit_code=0 ; varnishadm -S $wrong_secret_file -T :6083 ping >$stdout_file 2>$stderr_file || exit_code=$?
+[ "${exitcode}" != "0" ] && echo PASS || echo FAIL
+
+echo -n TEST correct auth succeeds ...
 exit_code=0 ; varnishadm -S $secret_file -T :6083 ping >$stdout_file 2>$stderr_file || exit_code=$?
-echo $exit_code
-cat $stdout_file $stderr_file
+grep --quiet --fixed-strings 'PONG' $stdout_file && echo PASS || echo FAIL
 
-echo TEST ban
-exit_code=0 ; varnishadm -S $secret_file -T :6083 "ban req.url == /dummy" >$stdout_file 2>$stderr_file || exit_code=$?
-echo $exit_code
-cat $stdout_file $stderr_file
-
-echo TEST banner
+echo -n TEST banner ...
 exit_code=0 ; varnishadm -S $secret_file -T :6083 banner >$stdout_file 2>$stderr_file || exit_code=$?
-echo $exit_code
-cat $stdout_file $stderr_file
+grep --quiet --fixed-strings 'Varnish Cache CLI Bridge' $stdout_file && echo PASS || echo FAIL
 
-kill -s SIGTERM $proxy_pid
-wait
+echo -n TEST ban ...
+exit_code=0 ; varnishadm -S $secret_file -T :6083 "ban req.url == /dummy" >$stdout_file 2>$stderr_file || exit_code=$?
+grep --quiet --fixed-strings 'Ban forwarded' $stdout_file && echo PASS || echo FAIL
