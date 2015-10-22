@@ -12,7 +12,13 @@ cat /proc/sys/kernel/random/uuid >$wrong_secret_file
 
 echo 'INIT executing `go test`'
 go test github.com/section-io/varnish-cli-bridge || {
-  echo 'Failed to compile and test.'
+  echo 'Failed go tests.'
+  exit 1
+}
+
+echo INIT installing bridge
+go install github.com/section-io/varnish-cli-bridge || {
+  echo 'Failed to install.'
   exit 1
 }
 
