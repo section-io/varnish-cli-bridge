@@ -37,3 +37,23 @@ func TestAuthenticationChallengeIsRemembered(t *testing.T) {
 		t.Errorf("Expected remembered challenge %#v to match response challenge %#v", mockSession.AuthChallenge, responseChallenge)
 	}
 }
+
+func TestCalculatedAuthenticator(t *testing.T) {
+	// example values from https://www.varnish-cache.org/docs/trunk/reference/varnish-cli.html
+	authChallenge := "ixslvvxrgkjptxmcgnnsdxsvdmvfympg"
+	secretBytes := []byte("foo\n")
+	authenticator := "455ce847f0073c7ab3b1465f74507b75d3dc064c1e7de3b71e00de9092fdc89a"
+
+	mockWriter := new(bytes.Buffer)
+	mockSession := &VarnishCliSession{mockWriter, false, authChallenge}
+
+	handleVarnishCliAuthenticationAttempt(authenticator, mockSession, secretBytes)
+	response := mockWriter.String()
+
+	if !strings.HasPrefix(response, "200 ") {
+		t.Errorf("Expected response to being with '200 ' but was '%#v'.", response)
+	}
+	if !mockSession.HasAuthenticated {
+		t.Errorf("Expected session to become authenticated but was not.")
+	}
+}

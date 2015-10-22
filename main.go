@@ -207,25 +207,25 @@ Type 'quit' to close CLI session.`
 	writeVarnishCliResponse(writer, CLIS_OK, fmt.Sprintf(bannerFormat, bannerVarnishVersion))
 }
 
-func handleVarnishCliAuthenticationAttempt(args string, session *VarnishCliSession) {
+func getVarnishSecret() ([]byte, error) {
+	file, err := os.Open(secretFile)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to open secret file '%s':\n%#v", secretFile, err)
+	}
+	defer file.Close()
+	secretBytes, err := ioutil.ReadAll(file)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to read secret file '%s':\n%#v", secretFile, err)
+	}
+	return secretBytes, nil
+}
+
+func handleVarnishCliAuthenticationAttempt(args string, session *VarnishCliSession, secretBytes []byte) {
 
 	if len(session.AuthChallenge) == 0 {
 		writeVarnishCliResponse(session.Writer, CLIS_CANT, "Authentication challenge not initialised.")
 		return
 	}
-
-	var secretBytes []byte
-	func() {
-		file, err := os.Open(secretFile)
-		if err != nil {
-			log.Panicf("Failed to open secret file '%s':\n%v", secretFile, err)
-		}
-		defer file.Close()
-		secretBytes, err = ioutil.ReadAll(file)
-		if err != nil {
-			log.Panicf("Failed to read secret file '%s':\n%v", secretFile, err)
-		}
-	}()
 
 	hash := sha256.New()
 	hash.Write([]byte(session.AuthChallenge + "\n"))
@@ -320,7 +320,13 @@ func handleRequest(requestLine string, session *VarnishCliSession) {
 		writeVarnishCliBanner(session.Writer)
 		return
 	case "auth":
-		handleVarnishCliAuthenticationAttempt(commandAndArgs[1], session)
+		secretBytes, err := getVarnishSecret()
+		if err != nil {
+			log.Printf("Cannot get secret: %#v", err)
+			writeVarnishCliResponse(session.Writer, CLIS_CANT, "Secret not available.")
+			return
+		}
+		handleVarnishCliAuthenticationAttempt(commandAndArgs[1], session, secretBytes)
 		return
 	case "ping":
 		handleVarnishCliPingRequest(session.Writer)
