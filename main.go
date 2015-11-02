@@ -308,7 +308,7 @@ func handleRequest(requestLine string, session *VarnishCliSession) {
 	requestLine = strings.TrimLeft(requestLine, " ")
 	log.Printf("Received request '%s'", requestLine)
 
-	commandAndArgs := strings.SplitN(requestLine, " ", 2)
+	commandAndArgs := tokenizeRequest(requestLine) 
 	command := commandAndArgs[0]
 	if command != strings.ToLower(command) {
 		writeVarnishCliResponse(session.Writer, CLIS_UNKNOWN, "all commands are in lower-case.")
@@ -340,7 +340,7 @@ func handleRequest(requestLine string, session *VarnishCliSession) {
 
 	switch command {
 	case "ban":
-		handleVarnishCliBanRequest(commandAndArgs[1], session.Writer)
+		handleVarnishCliBanRequest(varnishQuoteArgs(commandAndArgs[1:]), session.Writer)
 		return
 	case "ban.url":
 		handleVarnishCliBanRequest("req.url ~ "+commandAndArgs[1], session.Writer)
