@@ -10,25 +10,25 @@ func readSingleToken(s string) (token string, tail string, err error) {
 	token = ""
 	i, n, quoted := 0, len(s), false
 
-	loop:
+loop:
 	for ; i < n; i++ {
-		char := s[i:i+1]
+		char := s[i : i+1]
 
 		switch char {
 		case `"`:
-			quoted =! quoted
+			quoted = !quoted
 		case ` `:
-			if (!quoted) {
-				i--; //Include in tail
+			if !quoted {
+				i-- //Include in tail
 				break loop
 			}
 			token += char
 		case `\`:
 			i++
-			if (i<n) {
-				char := s[i:i+1]
+			if i < n {
+				char := s[i : i+1]
 
-				backSlashloop:
+			backSlashloop:
 				switch char {
 				case `n`:
 					token += "\n"
@@ -45,11 +45,11 @@ func readSingleToken(s string) (token string, tail string, err error) {
 				case `\`:
 					token += "\\"
 					break backSlashloop
-				case `0`,`1`,`2`,`3`,`4`,`5`,`6`,`7`: // Octal syntax \nnn
+				case `0`, `1`, `2`, `3`, `4`, `5`, `6`, `7`: // Octal syntax \nnn
 					// TODO: Handle malformed tokens
 					var sscanfChar byte
-					res, _ :=fmt.Sscanf(s[i:], "%03o", &sscanfChar)
-					if (res == 1) {
+					res, _ := fmt.Sscanf(s[i:], "%03o", &sscanfChar)
+					if res == 1 {
 						i += 2
 						token += string(sscanfChar)
 					} else {
@@ -60,9 +60,9 @@ func readSingleToken(s string) (token string, tail string, err error) {
 					// TODO: Handle malformed tokens
 					var sscanfChar byte
 					res, _ := fmt.Sscanf(s[i+1:], "%02x", &sscanfChar)
-					if (res == 1) {
+					if res == 1 {
 						i += 2
-						token +=  string(sscanfChar)
+						token += string(sscanfChar)
 					} else {
 						token += `\` + char
 					}
@@ -80,7 +80,7 @@ func readSingleToken(s string) (token string, tail string, err error) {
 		}
 	}
 
-	if (i >= n) {
+	if i >= n {
 		tail = ""
 	} else {
 		tail = s[i+1:]
@@ -106,11 +106,11 @@ func tokenizeRequest(input string) (result []string) {
 	return
 }
 
-func varnishQuoteArgs(input []string ) (result string) {
+func varnishQuoteArgs(input []string) (result string) {
 	quoted := []string{}
 
 	for _, i := range input {
-		quoted=append(quoted,strconv.Quote(i))
+		quoted = append(quoted, strconv.Quote(i))
 	}
 
 	result = strings.Join(quoted, " ")

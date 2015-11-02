@@ -2,11 +2,10 @@ package main
 
 import (
 	"testing"
-	"strings"
 )
 
 func TestDecodeBackSlash(t *testing.T) {
-	testDecodeBackSlash(t,`a\nb\rc\td\"e\\ activies`,"a\nb\rc\td\"e\\"," activies")
+	testDecodeBackSlash(t, `a\nb\rc\td\"e\\ activies`, "a\nb\rc\td\"e\\", " activies")
 	testDecodeBackSlash(t, `\x41`, "A", "")
 	testDecodeBackSlash(t, `\x41\x42`, "AB", "")
 	testDecodeBackSlash(t, `\101`, "A", "")
@@ -25,11 +24,11 @@ func TestDecodeBackSlashMalformed(t *testing.T) {
 }
 
 func testDecodeBackSlash(t *testing.T, input string, tokenExpected string, tailExpected string) {
-	tokenActual, tailActual, _  := readSingleToken(input)
-	if !strings.HasPrefix(tokenActual, tokenExpected) {
+	tokenActual, tailActual, _ := readSingleToken(input)
+	if tokenActual != tokenExpected {
 		t.Errorf("Expected token of %#v to be %#v but was %#v.", input, tokenExpected, tokenActual)
 	}
-	if !strings.HasPrefix(tailActual, tailExpected) {
+	if tailActual != tailExpected {
 		t.Errorf("Expected tail of %#v to be %#v but was %#v.", input, tailExpected, tailActual)
 	}
 }

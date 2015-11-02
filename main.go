@@ -308,7 +308,7 @@ func handleRequest(requestLine string, session *VarnishCliSession) {
 	requestLine = strings.TrimLeft(requestLine, " ")
 	log.Printf("Received request '%s'", requestLine)
 
-	commandAndArgs := tokenizeRequest(requestLine) 
+	commandAndArgs := tokenizeRequest(requestLine)
 	command := commandAndArgs[0]
 	if command != strings.ToLower(command) {
 		writeVarnishCliResponse(session.Writer, CLIS_UNKNOWN, "all commands are in lower-case.")
