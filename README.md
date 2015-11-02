@@ -5,7 +5,7 @@ Varnish Cache CLI clients and relay `ban` requests to all Varnish Cache
 instances for a given section.io-hosted Varnish by forwarding the request
 to the section.io API.
 
-![Build status image](https://travis-ci.org/section-io/varnish-cli-bridge.svg?branch=master)
+[![Build status image](https://travis-ci.org/section-io/varnish-cli-bridge.svg?branch=master)](https://travis-ci.org/section-io/varnish-cli-bridge)
 
 ## Required Configuration
 
