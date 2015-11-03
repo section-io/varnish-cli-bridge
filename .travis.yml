@@ -1,9 +1,19 @@
 language: go
-
 go:
-  - 1.5.1
-
+- 1.5.1
 env:
-  - GIMME_OS=linux GIMME_ARCH=amd64 CGO_ENABLED=0
-
+- GIMME_OS=linux GIMME_ARCH=amd64 CGO_ENABLED=0
 gobuild_args: -tags netgo
+script:
+- go test -tags netgo -v ./...
+before_deploy:
+- go build -a -tags netgo -v ./...
+- tar -zcvf varnish-cli-bridge-$TRAVIS_BRANCH-$GIMME_OS-$GIMME_ARCH.tar.gz varnish-cli-bridge
+deploy:
+  provider: releases
+  api_key:
+    secure: IfRzboO5xZPj8XjreomK+7JMKXdYITKTmUbEF2R0EONyITxauM7ROWcMbn+YQ9bZbEsqGWO1CeONMih2iAW3+9F9jUCg8rtAbshmEfEJceRsT5nqVJa3MXNUZdfTPOO1QI3ayVZTA617Zhu44sAsAz7LC3nLEBXMm1mKQCBsxK3/NiCQHZATeXx8dKe+R25RNbsORkCaS+eq87Ckb/n9Ex9AcyZiuCdGM8G+yjP5SAFFHoeAQJdKX7X2AU0ratvQXGQD+BIqHs2Hz040mVswfbkPxCJp3Uj0QITqidMIkQj8YBsEtiu0xCk9ExmzLk3Y+nU/FwHp5g2fyTG8euQcK7McEWG545Ncyfq0BTSQMItPmN5yP0fvXUY6/Db64LVgCHglwNlsUqxFTpkzj38soXGtFap72XynBZHN3mDXEedje0W/feTGwa+QljbP3Spkm/ZeASYvSEUHyS/CwqCB888asH+KgRlcoAQumDrGrLab16RSAoQDUY6dT0+Fp66Z+6fKoxSG13nXjbOE9UWVNts+KldFz83yuQMgMRttb+TxQQQbwTtoA/e5Xf/z6VaLdKJrVcP/9B1QLDXry81SuqYoHY1hV6rtYnOn1ixEEg7uGkLYIRWPG0EOvhZmGeq+iInVzw1INe4z9DkwdFdnWs6pduezQv57bP2tE/WRtC0=
+  file: varnish-cli-bridge-$TRAVIS_BRANCH-$GIMME_OS-$GIMME_ARCH.tar.gz
+  skip_cleanup: true
+  on:
+    repo: section-io/varnish-cli-bridge
