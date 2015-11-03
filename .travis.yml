@@ -16,4 +16,4 @@ deploy:
   file: varnish-cli-bridge-$TRAVIS_BRANCH-$GIMME_OS-$GIMME_ARCH.tar.gz
   skip_cleanup: true
   on:
-    repo: section-io/varnish-cli-bridge
+    tags: true
