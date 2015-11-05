@@ -83,7 +83,7 @@ loop:
 	if i >= n {
 		tail = ""
 	} else {
-		tail = s[i+1:]
+		tail = strings.TrimLeft(s[i+1:], " ")
 	}
 	return
 }
