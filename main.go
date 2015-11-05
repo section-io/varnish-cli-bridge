@@ -167,13 +167,14 @@ func main() {
 func writeVarnishCliResponse(writer io.Writer, status VarnishCliResponseStatus, body string) {
 	responseLength := len(body) // NOTE len() returns byte count, not character count
 	statusLine := fmt.Sprintf("%3d %-8d\n", status, responseLength)
-	buffer := []byte(statusLine + body + "\n")
+	response = statusLine + body
+	buffer := []byte(response + "\n")
 
 	_, err := writer.Write(buffer)
 	if err != nil {
 		log.Panic(err)
 	}
-	log.Printf("Sent response %#v", string(buffer))
+	log.Printf("Sent response %#v", response)
 }
 
 func writeVarnishCliAuthenticationChallenge(session *VarnishCliSession) {
@@ -305,8 +306,8 @@ func handleVarnishCliBanRequest(args string, writer io.Writer) {
 }
 
 func handleRequest(requestLine string, session *VarnishCliSession) {
-	requestLine = strings.TrimLeft(requestLine, " ")
 	log.Printf("Received request %#v", requestLine)
+	requestLine = strings.TrimLeft(requestLine, " ")
 
 	commandAndArgs := tokenizeRequest(requestLine)
 	command := commandAndArgs[0]
