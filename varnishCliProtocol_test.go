@@ -25,7 +25,7 @@ func TestDecodeBackSlashMalformed(t *testing.T) {
 }
 
 func TestTokenizeRequest(t *testing.T) {
-	input := `"auth" "2049dfd74a49800f06c28137df6c8224a56f6335f277b5fc773ac5831e5dcf07s"`
+	input := `"auth" "2049dfd74a49800f06c28137df6c8224a56f6335f277b5fc773ac5831e5dcf07"`
 	tokensActual := tokenizeRequest(input)
 	tokensExpected := []string{`auth`, `2049dfd74a49800f06c28137df6c8224a56f6335f277b5fc773ac5831e5dcf07`}
 
