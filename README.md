@@ -46,9 +46,11 @@ Defaults to `/etc/varnish/secret` if not provided. File contents must be
 identical to the secret file passed to `varnishadm` via its `-S` argument.
 
 * Listen address: The TCP port and optional interface IP address on which the
-Varnish CLI Bridge should listen for incoming connections. Format is
-`[IP]:PORT` and the default is `:6082` if not provided. Omitting the IP results
-in binding to all interfaces (ie `INADDR_ANY`).
+Varnish CLI Bridge should listen for incoming connections. Can be specified
+via the `VARNISH_CLI_BRIDGE_LISTEN_ADDRESS` environment variable or the
+`-listen-address` command line argument, with the latter taking precedence.
+Format is `[IP]:PORT` and the default is `:6082` if not provided.
+Omitting the IP results in binding to all interfaces (ie `INADDR_ANY`).
 
 ## Supported commands
 
