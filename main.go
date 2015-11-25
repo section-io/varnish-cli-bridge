@@ -333,6 +333,25 @@ func handleVarnishCliParamShowRequest(arg string, writer io.Writer) {
 	}
 }
 
+var inlineConfigName string
+var inlineQuotedVCLstring string
+
+func handleVarnishCliVclInline(configname string, quotedVCLstring string, writer io.Writer) {
+	inlineConfigName = configname
+	inlineQuotedVCLstring = quotedVCLstring
+	writeVarnishCliResponse(writer, CLIS_OK, `VCL.compiled\n"`)
+}
+
+func handleVarnishCliVclUse(configname string, writer io.Writer) {
+	if configname != inlineConfigName {
+		writeVarnishCliResponse(writer, CLIS_PARAM, fmt.Sprintf(`No configuration named %s known.`, configname))
+		return
+	}
+
+	//Varnishd actually returns a 200 & zero byte reponse (a problem to match since we add a trailing /n in writeVarnishCliResponse)
+	writeVarnishCliResponse(writer, CLIS_OK, ``)
+}
+
 func handleRequest(requestLine string, session *VarnishCliSession) {
 	log.Printf("Received request %#v", requestLine)
 	requestLine = strings.TrimLeft(requestLine, " ")
@@ -377,6 +396,13 @@ func handleRequest(requestLine string, session *VarnishCliSession) {
 	case "ban.url":
 		handleVarnishCliBanRequest("req.url ~ "+commandAndArgs[1], session.Writer)
 		return
+	case "vcl.inline":
+		handleVarnishCliVclInline(commandAndArgs[1], commandAndArgs[2], session.Writer)
+		return
+	case "vcl.use":
+		handleVarnishCliVclUse(commandAndArgs[1], session.Writer)
+		return
+
 	}
 
 	log.Printf("Unrecognised command '%s'.", command)
