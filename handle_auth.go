@@ -24,7 +24,7 @@ func getVarnishSecret() ([]byte, error) {
 	return secretBytes, nil
 }
 
-func writeVarnishCliAuthenticationChallenge(session *VarnishCliSession) {
+func writeVarnishCliAuthenticationChallenge(session *varnishCliSession) {
 	const challengeSize = 32
 
 	challengeBytes := make([]byte, challengeSize)
@@ -41,13 +41,17 @@ func writeVarnishCliAuthenticationChallenge(session *VarnishCliSession) {
 	writeVarnishCliResponse(session.Writer, CLIS_AUTH, session.AuthChallenge)
 }
 
-func handleVarnishCliAuthenticationAttempt(args string, session *VarnishCliSession) {
+func handleVarnishCliAuthenticationAttempt(args string, session *varnishCliSession) {
 	secretBytes, err := getVarnishSecret()
 	if err != nil {
 		log.Printf("Cannot get secret: %#v", err)
 		writeVarnishCliResponse(session.Writer, CLIS_CANT, "Secret not available.")
 		return
 	}
+	handleVarnishCliAuthenticationAttemptInternal(args, session, secretBytes)
+}
+
+func handleVarnishCliAuthenticationAttemptInternal(args string, session *varnishCliSession, secretBytes []byte) {
 
 	if len(session.AuthChallenge) == 0 {
 		writeVarnishCliResponse(session.Writer, CLIS_CANT, "Authentication challenge not initialised.")

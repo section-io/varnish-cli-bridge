@@ -14,14 +14,7 @@ import (
 	"time"
 )
 
-// JsonBanRequest is the API ban request message
-type JsonBanRequest struct {
-	Proxy string `json:"proxy"`
-	Ban   string `json:"ban"`
-}
-
-// VarnishCliSession are details for an admin port session
-type VarnishCliSession struct {
+type varnishCliSession struct {
 	Writer           io.Writer
 	HasAuthenticated bool
 	AuthChallenge    string
@@ -156,7 +149,7 @@ func writeVarnishCliResponse(writer io.Writer, status VarnishCliResponseStatus, 
 	log.Printf("Sent response %#v", response)
 }
 
-func handleRequest(requestLine string, session *VarnishCliSession) {
+func handleRequest(requestLine string, session *varnishCliSession) {
 	log.Printf("Received request %#v", requestLine)
 	requestLine = strings.TrimLeft(requestLine, " ")
 
@@ -211,7 +204,7 @@ func handleConnection(connection net.Conn) {
 	defer connection.Close()
 	scanner := bufio.NewScanner(connection)
 
-	session := &VarnishCliSession{connection, false, ""}
+	session := &varnishCliSession{connection, false, ""}
 
 	writeVarnishCliAuthenticationChallenge(session)
 

@@ -10,9 +10,14 @@ import (
 	"net/http"
 )
 
+type jsonBanRequest struct {
+	Proxy string `json:"proxy"`
+	Ban   string `json:"ban"`
+}
+
 func handleVarnishCliBanRequest(args string, writer io.Writer) {
 
-	postValues := &JsonBanRequest{
+	postValues := &jsonBanRequest{
 		Proxy: sectionioProxyName,
 		Ban:   args,
 	}
