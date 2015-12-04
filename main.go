@@ -6,7 +6,6 @@ import (
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/hex"
-	"encoding/json"
 	"flag"
 	"fmt"
 	"io"
@@ -14,6 +13,7 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"net/url"
 	"os"
 	"regexp"
 	"strings"
@@ -61,12 +61,14 @@ var (
 	// TODO make version configurable, or query from section.io API
 	bannerVarnishVersion = "varnish-3.0.0 revision 0000000"
 
-	// eg "https://aperture.section.io/api/v1/account/1/application/1/state"
+	// eg "https://aperture.section.io/api/v1/account/1/application/1/environment/Production/proxy/varnish/state"
 	sectionioApiEndpoint string
 	sectionioUsername    string
 	sectionioPassword    string
-	sectionioProxyName   = "varnish"
 )
+
+var version string
+var commitHash string
 
 func configure() {
 	const cliEnvKeyPrefix = "VARNISH_CLI_BRIDGE_"
@@ -109,13 +111,6 @@ func configure() {
 		log.Fatal(sectionioEnvKeyPrefix + "PASSWORD environment variable is required.")
 	}
 
-	envProxyName := os.Getenv(sectionioEnvKeyPrefix + "PROXY_NAME")
-	if envProxyName != "" {
-		sectionioProxyName = envProxyName
-	}
-	flag.StringVar(&sectionioProxyName, "proxy-name", sectionioProxyName,
-		"The section.io Varnish proxy name to target for API requests.")
-
 	help := flag.Bool("help", false, "Display this help.")
 	flag.Parse()
 
@@ -130,18 +125,17 @@ func configure() {
 	if sectionioUsername == "" {
 		log.Fatal("section.io username is required.")
 	}
-	if sectionioProxyName == "" {
-		log.Fatal("section.io proxy name is required.")
-	}
 
 	log.Printf("Using Varnish CLI secret file '%s'.", secretFile)
 	log.Printf("Using API endpoint '%s'.", sectionioApiEndpoint)
-	log.Printf("Using API proxy name '%s'.", sectionioProxyName)
 	log.Printf("Using API username '%s'.", sectionioUsername)
 }
 
 func main() {
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
+
+	log.Printf("Version %s", version)
+	log.Printf("Commit %s", commitHash)
 
 	configure()
 
@@ -252,24 +246,27 @@ func handleVarnishCliPingRequest(writer io.Writer) {
 
 func handleVarnishCliBanRequest(args string, writer io.Writer) {
 
-	postValues := &JsonBanRequest{
-		Proxy: sectionioProxyName,
-		Ban:   args,
-	}
-	requestBody, err := json.Marshal(postValues)
+	requestURL, err := url.Parse(sectionioApiEndpoint)
 	if err != nil {
-		log.Printf("Error serialising ban request to JSON: %v", err)
-		writeVarnishCliResponse(writer, CLIS_CANT, "Failed to serialise the API request.")
+		log.Printf("Error parsing url: %v", err)
+		writeVarnishCliResponse(writer, CLIS_CANT, "Failed to parse API URL.")
 		return
 	}
+	q := requestURL.Query()
+	q.Set("banExpression", args)
+	requestURL.RawQuery = q.Encode()
 
-	request, err := http.NewRequest("POST", sectionioApiEndpoint, bytes.NewReader(requestBody))
+	request, err := http.NewRequest("POST", requestURL.String(), bytes.NewReader([]byte("")))
 	if err != nil {
 		log.Printf("Error composing ban request: %v", err)
 		writeVarnishCliResponse(writer, CLIS_CANT, "Failed to compose the API request.")
 		return
 	}
+	useragent := fmt.Sprintf("section.io varnish-cli-bridge, version %s, commit %s", version, commitHash);
+	
 	request.Header.Set("Content-Type", "application/json")
+	request.Header.Set("User-Agent", useragent)
+	
 	request.SetBasicAuth(sectionioUsername, sectionioPassword)
 
 	response, err := httpClient.Do(request)
