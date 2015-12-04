@@ -2,15 +2,9 @@ package main // import "github.com/section-io/varnish-cli-bridge"
 
 import (
 	"bufio"
-	"bytes"
-	"crypto/rand"
-	"crypto/sha256"
-	"encoding/hex"
-	"encoding/json"
 	"flag"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"net"
 	"net/http"
@@ -20,29 +14,7 @@ import (
 	"time"
 )
 
-type VarnishCliResponseStatus int
-
-const (
-	CLIS_SYNTAX    VarnishCliResponseStatus = 100
-	CLIS_UNKNOWN                            = 101
-	CLIS_UNIMPL                             = 102
-	CLIS_TOOFEW                             = 104
-	CLIS_TOOMANY                            = 105
-	CLIS_PARAM                              = 106
-	CLIS_AUTH                               = 107
-	CLIS_OK                                 = 200
-	CLIS_TRUNCATED                          = 201
-	CLIS_CANT                               = 300
-	CLIS_COMMS                              = 400
-	CLIS_CLOSE                              = 500
-)
-
-type JsonBanRequest struct {
-	Proxy string `json:"proxy"`
-	Ban   string `json:"ban"`
-}
-
-type VarnishCliSession struct {
+type varnishCliSession struct {
 	Writer           io.Writer
 	HasAuthenticated bool
 	AuthChallenge    string
@@ -177,135 +149,7 @@ func writeVarnishCliResponse(writer io.Writer, status VarnishCliResponseStatus, 
 	log.Printf("Sent response %#v", response)
 }
 
-func writeVarnishCliAuthenticationChallenge(session *VarnishCliSession) {
-	const challengeSize = 32
-
-	challengeBytes := make([]byte, challengeSize)
-	bytesRead, err := rand.Read(challengeBytes)
-	if err != nil || bytesRead != challengeSize {
-		writeVarnishCliResponse(session.Writer, CLIS_CANT, "Failed to generate an authentication challenge.")
-		return
-	}
-	for index, value := range challengeBytes {
-		challengeBytes[index] = byte('a') + value%26
-	}
-	session.AuthChallenge = string(challengeBytes)
-
-	writeVarnishCliResponse(session.Writer, CLIS_AUTH, session.AuthChallenge)
-}
-
-func writeVarnishCliBanner(writer io.Writer) {
-	// emulate the normal banner Varnish for client-compatibility.
-	bannerFormat := `-----------------------------
-Varnish Cache CLI Bridge
------------------------------
-https://github.com/section-io/varnish-cli-bridge
-%s
-
-Type 'help' for command list.
-Type 'quit' to close CLI session.`
-
-	writeVarnishCliResponse(writer, CLIS_OK, fmt.Sprintf(bannerFormat, bannerVarnishVersion))
-}
-
-func getVarnishSecret() ([]byte, error) {
-	file, err := os.Open(secretFile)
-	if err != nil {
-		return nil, fmt.Errorf("Failed to open secret file '%s':\n%#v", secretFile, err)
-	}
-	defer file.Close()
-	secretBytes, err := ioutil.ReadAll(file)
-	if err != nil {
-		return nil, fmt.Errorf("Failed to read secret file '%s':\n%#v", secretFile, err)
-	}
-	return secretBytes, nil
-}
-
-func handleVarnishCliAuthenticationAttempt(args string, session *VarnishCliSession, secretBytes []byte) {
-
-	if len(session.AuthChallenge) == 0 {
-		writeVarnishCliResponse(session.Writer, CLIS_CANT, "Authentication challenge not initialised.")
-		return
-	}
-
-	hash := sha256.New()
-	hash.Write([]byte(session.AuthChallenge + "\n"))
-	hash.Write(secretBytes)
-	hash.Write([]byte(session.AuthChallenge + "\n"))
-
-	expectedAuthResponse := hex.EncodeToString(hash.Sum(nil))
-
-	// TODO allow whitespace-trimmed and case-insensitive compare of hex
-	if strings.ToLower(args) == expectedAuthResponse {
-		session.HasAuthenticated = true
-		writeVarnishCliBanner(session.Writer)
-	} else {
-		writeVarnishCliAuthenticationChallenge(session)
-	}
-
-}
-
-func handleVarnishCliPingRequest(writer io.Writer) {
-	response := fmt.Sprintf("PONG %d 1.0", time.Now().Unix())
-	writeVarnishCliResponse(writer, CLIS_OK, response)
-}
-
-func handleVarnishCliBanRequest(args string, writer io.Writer) {
-
-	postValues := &JsonBanRequest{
-		Proxy: sectionioProxyName,
-		Ban:   args,
-	}
-	requestBody, err := json.Marshal(postValues)
-	if err != nil {
-		log.Printf("Error serialising ban request to JSON: %v", err)
-		writeVarnishCliResponse(writer, CLIS_CANT, "Failed to serialise the API request.")
-		return
-	}
-
-	request, err := http.NewRequest("POST", sectionioApiEndpoint, bytes.NewReader(requestBody))
-	if err != nil {
-		log.Printf("Error composing ban request: %v", err)
-		writeVarnishCliResponse(writer, CLIS_CANT, "Failed to compose the API request.")
-		return
-	}
-	request.Header.Set("Content-Type", "application/json")
-	request.SetBasicAuth(sectionioUsername, sectionioPassword)
-
-	response, err := httpClient.Do(request)
-	if err != nil {
-		log.Printf("Error posting ban request '%s': %v", args, err)
-		writeVarnishCliResponse(writer, CLIS_CANT, "Failed to forward the ban.")
-		return
-	}
-	var responseBodyText string
-	func() {
-		defer response.Body.Close()
-		responseBodyBytes, err := ioutil.ReadAll(response.Body)
-		if err != nil {
-			log.Printf("Error reading ban API response: %v", err)
-			writeVarnishCliResponse(writer, CLIS_CANT, "Failed to parse the API response.")
-			return
-		}
-		responseBodyText = string(responseBodyBytes)
-	}()
-
-	if response.StatusCode == 200 {
-		// TODO parse response body as JSON, expect:
-		// {"success":true,"description":"Ban applied"}
-		writeVarnishCliResponse(writer, CLIS_OK, "Ban forwarded.")
-		return
-	}
-
-	log.Printf("Unexpected API response status: %d, body: %v",
-		response.StatusCode,
-		responseBodyText)
-
-	writeVarnishCliResponse(writer, CLIS_CANT,
-		fmt.Sprintf("API responded with status %d.", response.StatusCode))
-}
-
-func handleRequest(requestLine string, session *VarnishCliSession) {
+func handleRequest(requestLine string, session *varnishCliSession) {
 	log.Printf("Received request %#v", requestLine)
 	requestLine = strings.TrimLeft(requestLine, " ")
 
@@ -321,13 +165,7 @@ func handleRequest(requestLine string, session *VarnishCliSession) {
 		writeVarnishCliBanner(session.Writer)
 		return
 	case "auth":
-		secretBytes, err := getVarnishSecret()
-		if err != nil {
-			log.Printf("Cannot get secret: %#v", err)
-			writeVarnishCliResponse(session.Writer, CLIS_CANT, "Secret not available.")
-			return
-		}
-		handleVarnishCliAuthenticationAttempt(commandAndArgs[1], session, secretBytes)
+		handleVarnishCliAuthenticationAttempt(commandAndArgs[1], session)
 		return
 	case "ping":
 		handleVarnishCliPingRequest(session.Writer)
@@ -340,12 +178,22 @@ func handleRequest(requestLine string, session *VarnishCliSession) {
 	}
 
 	switch command {
+	case "param.show":
+		handleVarnishCliParamShowRequest(commandAndArgs[1], session.Writer)
+		return
 	case "ban":
 		handleVarnishCliBanRequest(varnishQuoteArgs(commandAndArgs[1:]), session.Writer)
 		return
 	case "ban.url":
 		handleVarnishCliBanRequest("req.url ~ "+commandAndArgs[1], session.Writer)
 		return
+	case "vcl.inline":
+		handleVarnishCliVclInline(commandAndArgs[1], commandAndArgs[2], session.Writer)
+		return
+	case "vcl.use":
+		handleVarnishCliVclUse(commandAndArgs[1], session.Writer)
+		return
+
 	}
 
 	log.Printf("Unrecognised command '%s'.", command)
@@ -356,7 +204,7 @@ func handleConnection(connection net.Conn) {
 	defer connection.Close()
 	scanner := bufio.NewScanner(connection)
 
-	session := &VarnishCliSession{connection, false, ""}
+	session := &varnishCliSession{connection, false, ""}
 
 	writeVarnishCliAuthenticationChallenge(session)
 
