@@ -67,6 +67,9 @@ var (
 	sectionioPassword    string
 )
 
+var version string
+var commitHash string
+
 func configure() {
 	const cliEnvKeyPrefix = "VARNISH_CLI_BRIDGE_"
 	const sectionioEnvKeyPrefix = "SECTION_IO_"
@@ -130,6 +133,9 @@ func configure() {
 
 func main() {
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
+
+	log.Printf("Version %s", version)
+	log.Printf("Commit %s", commitHash)
 
 	configure()
 
@@ -256,7 +262,11 @@ func handleVarnishCliBanRequest(args string, writer io.Writer) {
 		writeVarnishCliResponse(writer, CLIS_CANT, "Failed to compose the API request.")
 		return
 	}
+	useragent := fmt.Sprintf("section.io varnish-cli-bridge, version %s, commit %s", version, commitHash);
+	
 	request.Header.Set("Content-Type", "application/json")
+	request.Header.Set("User-Agent", useragent)
+	
 	request.SetBasicAuth(sectionioUsername, sectionioPassword)
 
 	response, err := httpClient.Do(request)
