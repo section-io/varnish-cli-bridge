@@ -2,7 +2,7 @@
 
 go test github.com/section-io/varnish-cli-bridge || { echo 'Failed to compile and test.' ; exit 1; }
 
-CGO_ENABLED=0 GOOS=linux go build -a -ldflags "-X main.version=$(git rev-parse --abbrev-ref HEAD) -X main.commitHash=$(git rev-parse HEAD)" -tags netgo github.com/section-io/varnish-cli-bridge || { echo 'Failed to build.' ; exit 1; }
+CGO_ENABLED=0 GOOS=linux go build -a -ldflags "-X main.version=$(git describe --abbrev=0 --tags) -X main.commitHash=$(git rev-parse HEAD)" -tags netgo github.com/section-io/varnish-cli-bridge || { echo 'Failed to build.' ; exit 1; }
 
 #CGO_ENABLED=0 GOOS=windows go build -a -tags netgo github.com/section-io/varnish-cli-bridge
 
