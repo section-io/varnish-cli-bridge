@@ -38,11 +38,18 @@ var (
 	sectionioUsername    string
 	sectionioPassword    string
 	sectionioProxyName   = "varnish"
+
+	version    string
+	commitHash string
+	userAgent  string
 )
 
 func configure() {
 	const cliEnvKeyPrefix = "VARNISH_CLI_BRIDGE_"
 	const sectionioEnvKeyPrefix = "SECTION_IO_"
+
+	userAgent = fmt.Sprintf("section.io varnish-cli-bridge, version %s, commit %s", version, commitHash)
+	log.Printf("varinsh-cli-bridge Version: %s, Commit: %s", version, commitHash)
 
 	envListenAddress := os.Getenv(cliEnvKeyPrefix + "LISTEN_ADDRESS")
 	if envListenAddress != "" {

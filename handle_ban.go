@@ -35,6 +35,8 @@ func handleVarnishCliBanRequest(args string, writer io.Writer) {
 		writeVarnishCliResponse(writer, CLIS_CANT, "Failed to compose the API request.")
 		return
 	}
+
+	request.Header.Set("User-Agent", userAgent)
 	request.Header.Set("Content-Type", "application/json")
 	request.SetBasicAuth(sectionioUsername, sectionioPassword)
 	log.Printf("sectionioUsername, sectionioPassword %s %s", sectionioUsername, sectionioPassword)
