@@ -43,10 +43,9 @@ secret used to authenticate connections to the Varnish CLI Bridge.
 Can be specified via the `VARNISH_CLI_BRIDGE_SECRET_FILE` environment variable
 or the `-secret-file` command line argument, with the latter taking precedence.
 If specified the ile contents must be identical to the secret file passed
-to `varnishadm` via its `-S` argument.
-
-If left blank the bridge will not send the authentication challenge and so the
-client should not specify a secret file or value either.
+to `varnishadm` via its `-S` argument. If left blank the bridge will not send
+the authentication challenge and so the client should not specify a
+secret file or value either.
 
 * Listen address: The TCP port and optional interface IP address on which the
 Varnish CLI Bridge should listen for incoming connections. Can be specified
