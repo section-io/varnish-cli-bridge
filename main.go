@@ -80,7 +80,7 @@ func configure() {
 	var sectionioApiEndpointArgVal string
 
 	userAgent = fmt.Sprintf("section.io varnish-cli-bridge, version %s, commit %s", version, commitHash)
-	log.Printf("varinsh-cli-bridge Version: %s, Commit: %s", version, commitHash)
+	log.Printf("varnish-cli-bridge Version: %s, Commit: %s", version, commitHash)
 
 	envListenAddress := os.Getenv(cliEnvKeyPrefix + "LISTEN_ADDRESS")
 	if envListenAddress != "" {
