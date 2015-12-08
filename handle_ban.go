@@ -2,12 +2,12 @@ package main
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
+	"net/url"
 )
 
 type jsonBanRequest struct {
@@ -17,19 +17,18 @@ type jsonBanRequest struct {
 
 func handleVarnishCliBanRequest(args string, writer io.Writer) {
 
-	postValues := &jsonBanRequest{
-		Proxy: sectionioProxyName,
-		Ban:   args,
-	}
-	requestBody, err := json.Marshal(postValues)
+	requestURL, err := url.Parse(sectionioApiEndpoint + "state")
 	if err != nil {
-		log.Printf("Error serialising ban request to JSON: %v", err)
-		writeVarnishCliResponse(writer, CLIS_CANT, "Failed to serialise the API request.")
+		log.Printf("Error parsing url: %v", err)
+		writeVarnishCliResponse(writer, CLIS_CANT, "Failed to parse API URL.")
 		return
 	}
+	q := requestURL.Query()
+	q.Set("banExpression", args)
+	requestURL.RawQuery = q.Encode()
 
-	log.Printf("requestBody: %s", requestBody)
-	request, err := http.NewRequest("POST", fmt.Sprintf("%sstate",sectionioApiEndpoint), bytes.NewReader(requestBody))
+	request, err := http.NewRequest("POST", requestURL.String(), bytes.NewReader([]byte("")))
+
 	if err != nil {
 		log.Printf("Error composing ban request: %v", err)
 		writeVarnishCliResponse(writer, CLIS_CANT, "Failed to compose the API request.")
