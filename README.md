@@ -46,7 +46,7 @@ If specified the ile contents must be identical to the secret file passed
 to `varnishadm` via its `-S` argument.
 
 If left blank the bridge will not send the authentication challenge and so the
-client should not specify a secret file or value either
+client should not specify a secret file or value either.
 
 * Listen address: The TCP port and optional interface IP address on which the
 Varnish CLI Bridge should listen for incoming connections. Can be specified
@@ -66,7 +66,7 @@ planned to be implemented.
 * `ban`
 * `ban.url` (via automatic rewriting to `ban`)
 * `ping`
-* `param.show`
+* `param.show` (currently only `esi_syntax` and `cli_buffer`)
 * `vcl.inline`
 * `vcl.use`
 
