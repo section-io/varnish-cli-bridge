@@ -34,14 +34,14 @@ var (
 	bannerVarnishVersion = "varnish-3.0.0 revision 0000000"
 
 	// eg "https://aperture.section.io/api/v1/account/1/application/1/"
-	sectionioApiEndpoint   string
-	sectionioUsername      string
-	sectionioPassword      string
-	sectionioApiUrlPrefix  string
-	sectionioAccount       string
-	sectionioApplication   string
-	sectionioEnvironment   = "Production"
-	sectionioProxyName     = "varnish"
+	sectionioApiEndpoint  string
+	sectionioUsername     string
+	sectionioPassword     string
+	sectionioApiUrlPrefix string
+	sectionioAccount      string
+	sectionioApplication  string
+	sectionioEnvironment  = "Production"
+	sectionioProxyName    = "varnish"
 
 	version    string
 	commitHash string
@@ -98,7 +98,7 @@ func configure() {
 
 	envApiEndpoint := os.Getenv(sectionioEnvKeyPrefix + "API_ENDPOINT")
 	if envApiEndpoint != "" {
-		parseApiEndpoint(envApiEndpoint, sectionioEnvKeyPrefix + "API_ENDPOINT is invalid")
+		parseApiEndpoint(envApiEndpoint, sectionioEnvKeyPrefix+"API_ENDPOINT is invalid")
 	}
 	flag.StringVar(&sectionioApiEndpointArgVal, "api-endpoint", sectionioApiEndpointArgVal,
 		"The absolute section.io API url with account and application IDs.")
