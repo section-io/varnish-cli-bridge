@@ -83,11 +83,6 @@ func configure() {
 	flag.StringVar(&sectionioUsername, "username", "",
 		"The section.io username to use for API requests.")
 
-	sectionioPassword = os.Getenv(sectionioEnvKeyPrefix + "PASSWORD")
-	if sectionioPassword == "" {
-		log.Fatal(sectionioEnvKeyPrefix + "PASSWORD environment variable is required.")
-	}
-
 	envProxyName := os.Getenv(sectionioEnvKeyPrefix + "PROXY_NAME")
 	if envProxyName != "" {
 		sectionioProxyName = envProxyName
@@ -105,6 +100,11 @@ func configure() {
 
 	if !sectionioApiEndpointRx.MatchString(sectionioApiEndpoint) {
 		log.Fatal("api-endpoint argument is invalid.")
+	sectionioPassword = os.Getenv(sectionioEnvKeyPrefix + "PASSWORD")
+	if sectionioPassword == "" {
+		log.Fatal(sectionioEnvKeyPrefix + "PASSWORD environment variable is required.")
+	}
+
 	}
 	if sectionioUsername == "" {
 		log.Fatal("section.io username is required.")
