@@ -19,7 +19,7 @@ func TestCliResponseStatusLineLengthFieldIsLeftAligned(t *testing.T) {
 
 func TestAuthenticationChallengeIsRemembered(t *testing.T) {
 	mockWriter := new(bytes.Buffer)
-	mockSession := &varnishCliSession{mockWriter, false, true, ""}
+	mockSession := &varnishCliSession{mockWriter, false, ""}
 	writeVarnishCliAuthenticationChallenge(mockSession)
 	response := mockWriter.String()
 	fields := strings.Fields(response)
@@ -45,7 +45,7 @@ func TestCalculatedAuthenticator(t *testing.T) {
 	authenticator := "455ce847f0073c7ab3b1465f74507b75d3dc064c1e7de3b71e00de9092fdc89a"
 
 	mockWriter := new(bytes.Buffer)
-	mockSession := &varnishCliSession{mockWriter, false, true, authChallenge}
+	mockSession := &varnishCliSession{mockWriter, false, authChallenge}
 
 	handleVarnishCliAuthenticationAttemptInternal(authenticator, mockSession, secretBytes)
 	response := mockWriter.String()

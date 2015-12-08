@@ -17,7 +17,6 @@ import (
 type varnishCliSession struct {
 	Writer                 io.Writer
 	HasAuthenticated       bool
-	RequiresAuthentication bool
 	AuthChallenge          string
 }
 
@@ -212,7 +211,7 @@ func handleRequest(requestLine string, session *varnishCliSession) {
 		return
 	}
 
-	if !session.HasAuthenticated && session.RequiresAuthentication {
+	if !session.HasAuthenticated {
 		writeVarnishCliAuthenticationChallenge(session)
 		return
 	}
@@ -244,9 +243,9 @@ func handleConnection(connection net.Conn) {
 	defer connection.Close()
 	scanner := bufio.NewScanner(connection)
 
-	session := &varnishCliSession{connection, false, secretFile != "", ""}
+	session := &varnishCliSession{connection, secretFile == "", ""}
 
-	if session.RequiresAuthentication {
+	if !session.HasAuthenticated {
 		writeVarnishCliAuthenticationChallenge(session)
 	} else {
 		writeVarnishCliBanner(session.Writer)
