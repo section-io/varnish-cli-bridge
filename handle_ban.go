@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bytes"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -27,7 +26,7 @@ func handleVarnishCliBanRequest(args string, writer io.Writer) {
 	q.Set("banExpression", args)
 	requestURL.RawQuery = q.Encode()
 
-	request, err := http.NewRequest("POST", requestURL.String(), bytes.NewReader([]byte("")))
+	request, err := http.NewRequest("POST", requestURL.String(), nil)
 
 	if err != nil {
 		log.Printf("Error composing ban request: %v", err)
