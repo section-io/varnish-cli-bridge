@@ -15,9 +15,9 @@ import (
 )
 
 type varnishCliSession struct {
-	Writer           io.Writer
-	HasAuthenticated bool
-	AuthChallenge    string
+	Writer                 io.Writer
+	HasAuthenticated       bool
+	AuthChallenge          string
 }
 
 var (
@@ -27,7 +27,7 @@ var (
 	}
 
 	listenAddress = ":6082"
-	secretFile    = "/etc/varnish/secret"
+	secretFile      string
 
 	// nexcess/magento-turpentine checks the banner text to determine the ban syntax
 	// TODO make version configurable, or query from section.io API
@@ -140,7 +140,12 @@ func configure() {
 		log.Fatal("section.io proxy name is required.")
 	}
 
-	log.Printf("Using Varnish CLI secret file '%s'.", secretFile)
+	if secretFile == "" {
+		log.Printf("Using no varnish secret file")
+	} else {
+		log.Printf("Using Varnish CLI secret file '%s'.", secretFile)
+	}
+
 	log.Printf("Using API endpoint '%s'.", sectionioApiEndpoint)
 	log.Printf("Using API proxy name '%s'.", sectionioProxyName)
 	log.Printf("Using API username '%s'.", sectionioUsername)
@@ -238,9 +243,13 @@ func handleConnection(connection net.Conn) {
 	defer connection.Close()
 	scanner := bufio.NewScanner(connection)
 
-	session := &varnishCliSession{connection, false, ""}
+	session := &varnishCliSession{connection, secretFile == "", ""}
 
-	writeVarnishCliAuthenticationChallenge(session)
+	if !session.HasAuthenticated {
+		writeVarnishCliAuthenticationChallenge(session)
+	} else {
+		writeVarnishCliBanner(session.Writer)
+	}
 
 	for {
 		if scanner.Scan() {

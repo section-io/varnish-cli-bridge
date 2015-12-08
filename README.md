@@ -11,13 +11,13 @@ to the section.io API.
 
 The Varnish CLI Bridge has some mandatory configuration requirements:
 
-* API endpoint: The absolute section.io application state URL with account
+* API endpoint: The absolute section.io application URL with account
 and application IDs. Can be configured via the `SECTION_IO_API_ENDPOINT`
 environment variable or the `-api-endpoint` command line argument, with the
 latter taking precedence. The URL must contain the account ID and application
 ID to target. To support multiple section.io applications, run multiple
 instances of the bridge. Example URL for account `1`, application `2`:
-https://aperture.section.io/api/v1/account/1/application/2/state
+https://aperture.section.io/api/v1/account/1/application/2/
 
 * API username: The username with which to authenticate to the section.io API.
 Can be configured via the `SECTION_IO_USERNAME` environment variable or the
@@ -42,8 +42,11 @@ Defaults to `varnish` if not provided.
 secret used to authenticate connections to the Varnish CLI Bridge.
 Can be specified via the `VARNISH_CLI_BRIDGE_SECRET_FILE` environment variable
 or the `-secret-file` command line argument, with the latter taking precedence.
-Defaults to `/etc/varnish/secret` if not provided. File contents must be
-identical to the secret file passed to `varnishadm` via its `-S` argument.
+If specified the ile contents must be identical to the secret file passed
+to `varnishadm` via its `-S` argument.
+
+If left blank the bridge will not send the authentication challenge and so the
+client should not specify a secret file or value either.
 
 * Listen address: The TCP port and optional interface IP address on which the
 Varnish CLI Bridge should listen for incoming connections. Can be specified
@@ -63,6 +66,9 @@ planned to be implemented.
 * `ban`
 * `ban.url` (via automatic rewriting to `ban`)
 * `ping`
+* `param.show` (currently only `esi_syntax` and `cli_buffer`)
+* `vcl.inline`
+* `vcl.use`
 
 ### May be implemented later (in no particular order):
 
@@ -70,7 +76,6 @@ planned to be implemented.
 * `backend.list`
 * `ban.list`
 * `help`
-* `param.show`
 * `quit`
 * `status`
 * `vcl.list`
@@ -86,9 +91,7 @@ planned to be implemented.
 * `stop`
 * `storage.list`
 * `vcl.discard`
-* `vcl.inline`
 * `vcl.load`
-* `vcl.use`
 
 Read more about the CLI commands here:
 https://www.varnish-cache.org/docs/trunk/reference/varnish-cli.html
