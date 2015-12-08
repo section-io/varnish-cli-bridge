@@ -15,6 +15,10 @@ test -f /etc/apt/sources.list.d/varnish-cache.list || {
 command -v varnishadm >/dev/null ||
   sudo apt-get install --assume-yes varnish
 
+#install git
+command -v git >/dev/null ||
+  sudo apt-get install --assume-yes git
+
 # install Golang
 golang_version=1.5.1
 golang_download_file="go${golang_version}.linux-amd64.tar.gz"
