@@ -21,7 +21,7 @@ type varnishCliSession struct {
 }
 
 var (
-	sectionioApiEndpointRx = regexp.MustCompile("^https?://")
+	sectionioApiEndpointRx = regexp.MustCompile(`(?P<prefix>^https?:\/\/.+>?)\/account\/(?P<account>\d+)\/application\/(?P<application>\d+)(\/environment\/(?P<environment>[^\/]+)\/proxy\/(?P<proxy>[^\/]+))?`)
 	httpClient             = &http.Client{
 		Timeout: time.Minute,
 	}
@@ -33,20 +33,51 @@ var (
 	// TODO make version configurable, or query from section.io API
 	bannerVarnishVersion = "varnish-3.0.0 revision 0000000"
 
-	// eg "https://aperture.section.io/api/v1/account/1/application/1/state"
-	sectionioApiEndpoint string
-	sectionioUsername    string
-	sectionioPassword    string
-	sectionioProxyName   = "varnish"
+	// eg "https://aperture.section.io/api/v1/account/1/application/1/"
+	sectionioApiEndpoint   string
+	sectionioUsername      string
+	sectionioPassword      string
+	sectionioApiUrlPrefix  string
+	sectionioAccount       string
+	sectionioApplication   string
+	sectionioEnvironment   = "Production"
+	sectionioProxyName     = "varnish"
 
 	version    string
 	commitHash string
 	userAgent  string
 )
 
+func parseApiEndpoint(endpoint string, errorMessage string) {
+	match := sectionioApiEndpointRx.FindAllStringSubmatch(endpoint, -1)
+	if match != nil {
+		names := sectionioApiEndpointRx.SubexpNames()
+		nameMap := map[string]string{}
+		for i, n := range match[0] {
+			nameMap[names[i]] = n
+		}
+
+		sectionioApiUrlPrefix = nameMap["prefix"]
+		sectionioAccount = nameMap["account"]
+		sectionioApplication = nameMap["application"]
+		if nameMap["environment"] != "" {
+			sectionioEnvironment = nameMap["environment"]
+		}
+		if nameMap["proxy"] != "" {
+			sectionioProxyName = nameMap["proxy"]
+		}
+
+		sectionioApiEndpoint = fmt.Sprintf("%s/account/%s/application/%s/environment/%s/proxy/%s/", sectionioApiUrlPrefix, sectionioAccount, sectionioApplication, sectionioEnvironment, sectionioProxyName)
+	} else {
+		log.Fatal(errorMessage)
+	}
+}
+
 func configure() {
 	const cliEnvKeyPrefix = "VARNISH_CLI_BRIDGE_"
 	const sectionioEnvKeyPrefix = "SECTION_IO_"
+
+	var sectionioApiEndpointArgVal string
 
 	userAgent = fmt.Sprintf("section.io varnish-cli-bridge, version %s, commit %s", version, commitHash)
 	log.Printf("varinsh-cli-bridge Version: %s, Commit: %s", version, commitHash)
@@ -67,14 +98,10 @@ func configure() {
 
 	envApiEndpoint := os.Getenv(sectionioEnvKeyPrefix + "API_ENDPOINT")
 	if envApiEndpoint != "" {
-		if sectionioApiEndpointRx.MatchString(envApiEndpoint) {
-			sectionioApiEndpoint = envApiEndpoint
-		} else {
-			log.Fatal(sectionioEnvKeyPrefix + "API_ENDPOINT variable is invalid.")
-		}
+		parseApiEndpoint(envApiEndpoint, sectionioEnvKeyPrefix + "API_ENDPOINT is invalid")
 	}
-	flag.StringVar(&sectionioApiEndpoint, "api-endpoint", sectionioApiEndpoint,
-		"The absolute section.io application state POST url with account and application IDs.")
+	flag.StringVar(&sectionioApiEndpointArgVal, "api-endpoint", sectionioApiEndpointArgVal,
+		"The absolute section.io API url with account and application IDs.")
 
 	envUsername := os.Getenv(sectionioEnvKeyPrefix + "USERNAME")
 	if envUsername != "" {
@@ -82,11 +109,6 @@ func configure() {
 	}
 	flag.StringVar(&sectionioUsername, "username", "",
 		"The section.io username to use for API requests.")
-
-	sectionioPassword = os.Getenv(sectionioEnvKeyPrefix + "PASSWORD")
-	if sectionioPassword == "" {
-		log.Fatal(sectionioEnvKeyPrefix + "PASSWORD environment variable is required.")
-	}
 
 	envProxyName := os.Getenv(sectionioEnvKeyPrefix + "PROXY_NAME")
 	if envProxyName != "" {
@@ -103,8 +125,13 @@ func configure() {
 		os.Exit(1)
 	}
 
-	if !sectionioApiEndpointRx.MatchString(sectionioApiEndpoint) {
-		log.Fatal("api-endpoint argument is invalid.")
+	sectionioPassword = os.Getenv(sectionioEnvKeyPrefix + "PASSWORD")
+	if sectionioPassword == "" {
+		log.Fatal(sectionioEnvKeyPrefix + "PASSWORD environment variable is required.")
+	}
+
+	if sectionioApiEndpointArgVal != "" {
+		parseApiEndpoint(sectionioApiEndpointArgVal, "api-endpoint argument is invalid.")
 	}
 	if sectionioUsername == "" {
 		log.Fatal("section.io username is required.")

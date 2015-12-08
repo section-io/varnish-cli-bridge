@@ -29,7 +29,7 @@ func handleVarnishCliBanRequest(args string, writer io.Writer) {
 	}
 
 	log.Printf("requestBody: %s", requestBody)
-	request, err := http.NewRequest("POST", sectionioApiEndpoint, bytes.NewReader(requestBody))
+	request, err := http.NewRequest("POST", fmt.Sprintf("%sstate",sectionioApiEndpoint), bytes.NewReader(requestBody))
 	if err != nil {
 		log.Printf("Error composing ban request: %v", err)
 		writeVarnishCliResponse(writer, CLIS_CANT, "Failed to compose the API request.")
