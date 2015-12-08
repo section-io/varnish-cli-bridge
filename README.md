@@ -66,6 +66,9 @@ planned to be implemented.
 * `ban`
 * `ban.url` (via automatic rewriting to `ban`)
 * `ping`
+* `param.show`
+* `vcl.inline`
+* `vcl.use`
 
 ### May be implemented later (in no particular order):
 
@@ -73,7 +76,6 @@ planned to be implemented.
 * `backend.list`
 * `ban.list`
 * `help`
-* `param.show`
 * `quit`
 * `status`
 * `vcl.list`
@@ -89,9 +91,7 @@ planned to be implemented.
 * `stop`
 * `storage.list`
 * `vcl.discard`
-* `vcl.inline`
 * `vcl.load`
-* `vcl.use`
 
 Read more about the CLI commands here:
 https://www.varnish-cache.org/docs/trunk/reference/varnish-cli.html
