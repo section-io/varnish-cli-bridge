@@ -12,16 +12,20 @@ import (
 )
 
 func getVarnishSecret() ([]byte, error) {
-	file, err := os.Open(secretFile)
-	if err != nil {
-		return nil, fmt.Errorf("Failed to open secret file '%s':\n%#v", secretFile, err)
+	if secretFile != "" {
+		file, err := os.Open(secretFile)
+		if err != nil {
+			return nil, fmt.Errorf("Failed to open secret file '%s':\n%#v", secretFile, err)
+		}
+		defer file.Close()
+		secretBytes, err := ioutil.ReadAll(file)
+		if err != nil {
+			return nil, fmt.Errorf("Failed to read secret file '%s':\n%#v", secretFile, err)
+		}
+		return secretBytes, nil
+	} else {
+		return make([]byte, 0), nil
 	}
-	defer file.Close()
-	secretBytes, err := ioutil.ReadAll(file)
-	if err != nil {
-		return nil, fmt.Errorf("Failed to read secret file '%s':\n%#v", secretFile, err)
-	}
-	return secretBytes, nil
 }
 
 func writeVarnishCliAuthenticationChallenge(session *varnishCliSession) {

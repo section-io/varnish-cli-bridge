@@ -27,7 +27,7 @@ var (
 	}
 
 	listenAddress = ":6082"
-	secretFile    = "/etc/varnish/secret"
+	secretFile      string
 
 	// nexcess/magento-turpentine checks the banner text to determine the ban syntax
 	// TODO make version configurable, or query from section.io API
@@ -140,7 +140,12 @@ func configure() {
 		log.Fatal("section.io proxy name is required.")
 	}
 
-	log.Printf("Using Varnish CLI secret file '%s'.", secretFile)
+	if secretFile == "" {
+		log.Printf("Using empty varnish secret file")
+	} else {
+		log.Printf("Using Varnish CLI secret file '%s'.", secretFile)
+	}
+
 	log.Printf("Using API endpoint '%s'.", sectionioApiEndpoint)
 	log.Printf("Using API proxy name '%s'.", sectionioProxyName)
 	log.Printf("Using API username '%s'.", sectionioUsername)
