@@ -65,6 +65,7 @@ planned to be implemented.
 * `ban`
 * `ban.url` (via automatic rewriting to `ban`)
 * `banner`
+* `help`
 * `ping`
 * `param.show` (currently only `esi_syntax` and `cli_buffer`)
 * `vcl.inline`
@@ -74,7 +75,6 @@ planned to be implemented.
 
 * `backend.list`
 * `ban.list`
-* `help`
 * `quit`
 * `status`
 * `vcl.list`
