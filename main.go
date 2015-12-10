@@ -209,6 +209,13 @@ func handleRequest(requestLine string, session *varnishCliSession) {
 	case "ping":
 		handleVarnishCliPingRequest(session.Writer)
 		return
+	case "help":
+		if len(commandAndArgs) == 1 {
+			handleVarnishCliHelpRequest("", session.Writer)
+		} else {
+		handleVarnishCliHelpRequest(commandAndArgs[1], session.Writer)
+		}
+		return
 	}
 
 	if !session.HasAuthenticated {
@@ -232,7 +239,6 @@ func handleRequest(requestLine string, session *varnishCliSession) {
 	case "vcl.use":
 		handleVarnishCliVclUse(commandAndArgs[1], session.Writer)
 		return
-
 	}
 
 	log.Printf("Unrecognised command '%s'.", command)
