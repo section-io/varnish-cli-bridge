@@ -15,9 +15,9 @@ import (
 )
 
 type varnishCliSession struct {
-	Writer                 io.Writer
-	HasAuthenticated       bool
-	AuthChallenge          string
+	Writer           io.Writer
+	HasAuthenticated bool
+	AuthChallenge    string
 }
 
 var (
@@ -27,7 +27,7 @@ var (
 	}
 
 	listenAddress = ":6082"
-	secretFile      string
+	secretFile    string
 
 	// nexcess/magento-turpentine checks the banner text to determine the ban syntax
 	// TODO make version configurable, or query from section.io API
@@ -193,6 +193,9 @@ func handleRequest(requestLine string, session *varnishCliSession) {
 	requestLine = strings.TrimLeft(requestLine, " ")
 
 	commandAndArgs := tokenizeRequest(requestLine)
+	if len(commandAndArgs) == 0 {
+		return
+	}
 	command := commandAndArgs[0]
 	if command != strings.ToLower(command) {
 		writeVarnishCliResponse(session.Writer, CLIS_UNKNOWN, "all commands are in lower-case.")
@@ -208,6 +211,13 @@ func handleRequest(requestLine string, session *varnishCliSession) {
 		return
 	case "ping":
 		handleVarnishCliPingRequest(session.Writer)
+		return
+	case "help":
+		if len(commandAndArgs) == 1 {
+			handleVarnishCliHelpRequest("", session.Writer)
+		} else {
+			handleVarnishCliHelpRequest(commandAndArgs[1], session.Writer)
+		}
 		return
 	}
 
@@ -232,7 +242,6 @@ func handleRequest(requestLine string, session *varnishCliSession) {
 	case "vcl.use":
 		handleVarnishCliVclUse(commandAndArgs[1], session.Writer)
 		return
-
 	}
 
 	log.Printf("Unrecognised command '%s'.", command)
