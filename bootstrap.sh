@@ -13,7 +13,7 @@ test -f /etc/apt/sources.list.d/varnish-cache.list || {
 }
 
 command -v varnishadm >/dev/null ||
-  sudo apt-get install --assume-yes varnish
+  sudo apt-get install --assume-yes varnish=3.0.5-2
 
 #install git
 command -v git >/dev/null ||
