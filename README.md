@@ -51,7 +51,7 @@ secret file or value either.
 Varnish CLI Bridge should listen for incoming connections. Can be specified
 via the `VARNISH_CLI_BRIDGE_LISTEN_ADDRESS` environment variable or the
 `-listen-address` command line argument, with the latter taking precedence.
-Format is `[IP]:PORT` and the default is `:6082` if not provided.
+Format is `[IP]:PORT` and the default is `127.0.0.1:6082` if not provided.
 Omitting the IP results in binding to all interfaces (ie `INADDR_ANY`).
 
 ## Supported commands
