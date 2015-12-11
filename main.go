@@ -26,7 +26,7 @@ var (
 		Timeout: time.Minute,
 	}
 
-	listenAddress = ":6082"
+	listenAddress = "127.0.0.1:6082"
 	secretFile    string
 
 	// nexcess/magento-turpentine checks the banner text to determine the ban syntax
