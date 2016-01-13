@@ -107,7 +107,7 @@ func configure() {
 	if envUsername != "" {
 		sectionioUsername = envUsername
 	}
-	flag.StringVar(&sectionioUsername, "username", "",
+	flag.StringVar(&sectionioUsername, "username", sectionioUsername,
 		"The section.io username to use for API requests.")
 
 	envProxyName := os.Getenv(sectionioEnvKeyPrefix + "PROXY_NAME")
