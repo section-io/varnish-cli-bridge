@@ -29,8 +29,6 @@ var (
 	listenAddress = "127.0.0.1:6082"
 	secretFile    string
 
-	// nexcess/magento-turpentine checks the banner text to determine the ban syntax
-	// TODO make version configurable, or query from section.io API
 	bannerVarnishVersion = "varnish-3.0.0 revision 0000000"
 
 	// eg "https://aperture.section.io/api/v1/account/1/application/1/"
@@ -95,6 +93,13 @@ func configure() {
 	}
 	flag.StringVar(&secretFile, "secret-file", secretFile,
 		"Path to file containing the Varnish CLI authentication secret.")
+
+	envBannerVarnishVersion := os.Getenv(cliEnvKeyPrefix + "BANNER_VERSION")
+	if envBannerVarnishVersion != "" {
+		bannerVarnishVersion = envBannerVarnishVersion
+	}
+	flag.StringVar(&bannerVarnishVersion, "banner-version", bannerVarnishVersion,
+		"Varnish version text to include in the protocol banner text.")
 
 	envApiEndpoint := os.Getenv(sectionioEnvKeyPrefix + "API_ENDPOINT")
 	if envApiEndpoint != "" {
