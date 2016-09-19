@@ -80,7 +80,7 @@ planned to be implemented.
 * `banner`
 * `help`
 * `ping`
-* `param.show` (currently only `esi_syntax` and `cli_buffer`)
+* `param.show` (currently only `cli_buffer`, `esi_syntax`, and `feature`)
 * `vcl.inline`
 * `vcl.use`
 
