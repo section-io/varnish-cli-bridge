@@ -19,6 +19,12 @@ func handleVarnishCliParamShowRequest(arg string, writer io.Writer) {
                             Use 0x notation and do the bitor in your head :-)
 `)
 
+	case `feature`:
+		writeVarnishCliResponse(writer, CLIS_OK, `feature
+        Value is: +esi_ignore_other_elements
+        Default is: none
+`)
+
 	case `cli_buffer`:
 		writeVarnishCliResponse(writer, CLIS_OK, `cli_buffer                  32768 [bytes]
                             Default is 8192
