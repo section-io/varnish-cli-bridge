@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-#set -o xtrace DEBUG
+test -z "${DEBUG}" || set -o xtrace
 set -o errexit
 
 stdout_file=/tmp/test-output
@@ -27,11 +27,17 @@ echo INIT launching bridge
 SECTION_IO_PASSWORD=P@ssw0rd $GOPATH/bin/varnish-cli-bridge \
   -listen-address :6083 \
   -secret-file "${secret_file}" \
-  -api-endpoint http://httpbin.org/post \
+  -api-endpoint http://httpb.in/account/0/application/0/environment/0/proxy/varnish \
   -username testuser >/tmp/bridge-output 2>/tmp/bridge-error &
 proxy_pid=$!
 
 sleep 2 # allow time for proxy to begin listening
+
+kill -s 0 $proxy_pid || {
+  echo FAIL starting bridge
+  cat /tmp/bridge-output /tmp/bridge-error
+  exit 1
+}
 
 function finally {
   echo DONE terminating bridge
@@ -40,22 +46,27 @@ function finally {
 }
 trap finally EXIT
 
+function report_failure {
+  echo FAIL
+  test -z "${DEBUG}" || cat "${stdout_file}" "${stderr_file}"
+}
+
 echo -n TEST expects auth ...
 exit_code=0 ; varnishadm -T :6083 ping >$stdout_file 2>$stderr_file || exit_code=$?
-grep --quiet --fixed-strings 'Authentication required' $stderr_file && echo PASS || echo FAIL
+grep --quiet --fixed-strings 'Authentication required' $stderr_file && echo PASS || report_failure
 
 echo -n TEST wrong auth fails ...
 exit_code=0 ; varnishadm -S $wrong_secret_file -T :6083 ping >$stdout_file 2>$stderr_file || exit_code=$?
-[ "${exitcode}" != "0" ] && echo PASS || echo FAIL
+[ "${exitcode}" != "0" ] && echo PASS || report_failure
 
 echo -n TEST correct auth succeeds ...
 exit_code=0 ; varnishadm -S $secret_file -T :6083 ping >$stdout_file 2>$stderr_file || exit_code=$?
-grep --quiet --fixed-strings 'PONG' $stdout_file && echo PASS || echo FAIL
+grep --quiet --fixed-strings 'PONG' $stdout_file && echo PASS || report_failure
 
 echo -n TEST banner ...
 exit_code=0 ; varnishadm -S $secret_file -T :6083 banner >$stdout_file 2>$stderr_file || exit_code=$?
-grep --quiet --fixed-strings 'Varnish Cache CLI Bridge' $stdout_file && echo PASS || echo FAIL
+grep --quiet --fixed-strings 'Varnish Cache CLI Bridge' $stdout_file && echo PASS || report_failure
 
 echo -n TEST ban ...
 exit_code=0 ; varnishadm -S $secret_file -T :6083 "ban req.url == /dummy" >$stdout_file 2>$stderr_file || exit_code=$?
-grep --quiet --fixed-strings 'Ban forwarded' $stdout_file && echo PASS || echo FAIL
+grep --quiet --fixed-strings 'Ban forwarded' $stdout_file && echo PASS || report_failure
