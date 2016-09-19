@@ -105,7 +105,6 @@ func configure() {
 		log.Fatal("Only Varnish version 3.0 or 4.0 is supported.")
 	}
 
-	bannerVarnishVersion = fmt.Sprintf("varnish-%s.0 revision 0000000", varnishVersion)
 	envBannerVarnishVersion := os.Getenv(cliEnvKeyPrefix + "BANNER_VERSION")
 	if envBannerVarnishVersion != "" {
 		bannerVarnishVersion = envBannerVarnishVersion
@@ -163,10 +162,15 @@ func configure() {
 		log.Printf("Using Varnish CLI secret file '%s'.", secretFile)
 	}
 
+	if bannerVarnishVersion == "" {
+		bannerVarnishVersion = fmt.Sprintf("varnish-%s.0 revision 0000000", varnishVersion)
+	}
+
 	log.Printf("Using API endpoint '%s'.", sectionioApiEndpoint)
 	log.Printf("Using API proxy name '%s'.", sectionioProxyName)
 	log.Printf("Using API username '%s'.", sectionioUsername)
 	log.Printf("Using Varnish version '%s'.", varnishVersion)
+	log.Printf("Using Varnish banner version '%s'.", bannerVarnishVersion)
 }
 
 func main() {
