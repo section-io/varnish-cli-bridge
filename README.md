@@ -54,6 +54,12 @@ via the `VARNISH_CLI_BRIDGE_LISTEN_ADDRESS` environment variable or the
 Format is `[IP]:PORT` and the default is `127.0.0.1:6082` if not provided.
 Omitting the IP results in binding to all interfaces (ie `INADDR_ANY`).
 
+* Varnish version: The protocol version to simulate. Also sets the default
+version reported in the protocol banner response unless overridden.
+Can be specified via the `VARNISH_CLI_BRIDGE_VARNISH_VERSION` ennvironment variable
+or the `-varnish-version` command line argument, with the latter taking precedence.
+The only supported values are `3.0` and `4.0`. The default value is `3.0`.
+
 * Varnish banner: The text to include in the protocol banner response
 denoting the Varnish version. Can be specified via the
 `VARNISH_CLI_BRIDGE_BANNER_VERSION` ennvironment variable or the

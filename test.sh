@@ -70,3 +70,8 @@ grep --quiet --fixed-strings 'Varnish Cache CLI Bridge' $stdout_file && echo PAS
 echo -n TEST ban ...
 exit_code=0 ; varnishadm -S $secret_file -T :6083 "ban req.url == /dummy" >$stdout_file 2>$stderr_file || exit_code=$?
 grep --quiet --fixed-strings 'Ban forwarded' $stdout_file && echo PASS || report_failure
+
+echo -n TEST param.show cli_buffer ...
+exit_code=0 ; varnishadm -S $secret_file -T :6083 "param.show cli_buffer" >$stdout_file 2>$stderr_file || exit_code=$?
+grep --quiet --fixed-strings 'cli_buffer                  32768 [bytes]' $stdout_file && echo PASS || report_failure
+#grep --quiet --fixed-strings 'Value is: 32k [bytes]' $stdout_file && echo PASS || report_failure

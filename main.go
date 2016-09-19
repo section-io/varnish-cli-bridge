@@ -29,7 +29,8 @@ var (
 	listenAddress = "127.0.0.1:6082"
 	secretFile    string
 
-	bannerVarnishVersion = "varnish-3.0.0 revision 0000000"
+	varnishVersion       = "3.0"
+	bannerVarnishVersion string
 
 	// eg "https://aperture.section.io/api/v1/account/1/application/1/"
 	sectionioApiEndpoint  string
@@ -94,6 +95,17 @@ func configure() {
 	flag.StringVar(&secretFile, "secret-file", secretFile,
 		"Path to file containing the Varnish CLI authentication secret.")
 
+	envVarnishVersion := os.Getenv(cliEnvKeyPrefix + "VARNISH_VERSION")
+	if envVarnishVersion != "" {
+		varnishVersion = envVarnishVersion
+	}
+	flag.StringVar(&varnishVersion, "varnish-version", varnishVersion,
+		"Varnish version to simulate in the protocol.")
+	if varnishVersion != "3.0" && varnishVersion != "4.0" {
+		log.Fatal("Only Varnish version 3.0 or 4.0 is supported.")
+	}
+
+	bannerVarnishVersion = fmt.Sprintf("varnish-%s.0 revision 0000000", varnishVersion)
 	envBannerVarnishVersion := os.Getenv(cliEnvKeyPrefix + "BANNER_VERSION")
 	if envBannerVarnishVersion != "" {
 		bannerVarnishVersion = envBannerVarnishVersion
@@ -154,6 +166,7 @@ func configure() {
 	log.Printf("Using API endpoint '%s'.", sectionioApiEndpoint)
 	log.Printf("Using API proxy name '%s'.", sectionioProxyName)
 	log.Printf("Using API username '%s'.", sectionioUsername)
+	log.Printf("Using Varnish version '%s'.", varnishVersion)
 }
 
 func main() {
