@@ -56,13 +56,13 @@ Omitting the IP results in binding to all interfaces (ie `INADDR_ANY`).
 
 * Varnish version: The protocol version to simulate. Also sets the default
 version reported in the protocol banner response unless overridden.
-Can be specified via the `VARNISH_CLI_BRIDGE_VARNISH_VERSION` ennvironment variable
+Can be specified via the `VARNISH_CLI_BRIDGE_VARNISH_VERSION` environment variable
 or the `-varnish-version` command line argument, with the latter taking precedence.
 The only supported values are `3.0` and `4.0`. The default value is `3.0`.
 
 * Varnish banner: The text to include in the protocol banner response
 denoting the Varnish version. Can be specified via the
-`VARNISH_CLI_BRIDGE_BANNER_VERSION` ennvironment variable or the
+`VARNISH_CLI_BRIDGE_BANNER_VERSION` environment variable or the
 `-banner-version` command line argument, with the latter taking precedence.
 The recommended format is `varnish-[MAJOR].[MINOR].[BUILD] revision [REVISION]`
 but is not enforced. The default value is `varnish-3.0.0 revision 0000000`.
