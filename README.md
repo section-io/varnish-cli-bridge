@@ -11,13 +11,12 @@ to the section.io API.
 
 The Varnish CLI Bridge has some mandatory configuration requirements:
 
-* API endpoint: The absolute section.io application URL with account
-and application IDs. Can be configured via the `SECTION_IO_API_ENDPOINT`
+* API endpoint: The absolute section.io application URL with account ID, application ID, environment name, and proxy name. Can be configured via the `SECTION_IO_API_ENDPOINT`
 environment variable or the `-api-endpoint` command line argument, with the
 latter taking precedence. The URL must contain the account ID and application
-ID to target. To support multiple section.io applications, run multiple
-instances of the bridge. Example URL for account `1`, application `2`:
-https://aperture.section.io/api/v1/account/1/application/2/
+ID to target but should also include the environment name and proxy name. You can find the relevant URL on the API page in Aperture. To support multiple section.io applications, run multiple
+instances of the bridge. Example URL for account `1`, application `2`, environment `Production`, proxy `varnish`:
+https://aperture.section.io/api/v1/account/1/application/2/environment/Production/proxy/varnish
 
 * API username: The username with which to authenticate to the section.io API.
 Can be configured via the `SECTION_IO_USERNAME` environment variable or the
