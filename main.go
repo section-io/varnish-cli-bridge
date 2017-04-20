@@ -101,8 +101,8 @@ func configure() {
 	}
 	flag.StringVar(&varnishVersion, "varnish-version", varnishVersion,
 		"Varnish version to simulate in the protocol.")
-	if varnishVersion != "3.0" && varnishVersion != "4.0" {
-		log.Fatal("Only Varnish version 3.0 or 4.0 is supported.")
+	if varnishVersion != "3.0" && varnishVersion != "4.0" && varnishVersion != "4.1" {
+		log.Fatal("Only Varnish version 3.0, 4.0, or 4.1 is supported.")
 	}
 
 	envBannerVarnishVersion := os.Getenv(cliEnvKeyPrefix + "BANNER_VERSION")
