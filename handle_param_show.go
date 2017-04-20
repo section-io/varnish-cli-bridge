@@ -26,7 +26,7 @@ func handleVarnishCliParamShowRequest(arg string, writer io.Writer) {
 `)
 
 	case `cli_buffer`:
-		if varnishVersion == "4.0" {
+		if varnishVersion == "4.0" || varnishVersion == "4.1" {
 			writeVarnishCliResponse(writer, CLIS_OK, `cli_buffer
         Value is: 32k [bytes]
         Default is: 8k
