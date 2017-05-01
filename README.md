@@ -57,7 +57,7 @@ Omitting the IP results in binding to all interfaces (ie `INADDR_ANY`).
 version reported in the protocol banner response unless overridden.
 Can be specified via the `VARNISH_CLI_BRIDGE_VARNISH_VERSION` environment variable
 or the `-varnish-version` command line argument, with the latter taking precedence.
-The only supported values are `3.0` and `4.0`. The default value is `3.0`.
+The only supported values are `3.0`, `4.0` and `4.1`. The default value is `3.0`.
 
 * Varnish banner: The text to include in the protocol banner response
 denoting the Varnish version. Can be specified via the
