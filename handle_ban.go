@@ -59,7 +59,7 @@ func handleVarnishCliBanRequest(args string, writer io.Writer) {
 
 	log.Printf("responseBodyText: %s", responseBodyText)
 
-	if response.StatusCode == 200 {
+	if response.StatusCode == 200 || response.StatusCode == 204 {
 		// TODO parse response body as JSON, expect:
 		// {"success":true,"description":"Ban applied"}
 		writeVarnishCliResponse(writer, CLIS_OK, "Ban forwarded.")
