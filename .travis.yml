@@ -1,6 +1,6 @@
 language: go
 go:
-- 1.5.1
+- 1.12
 env:
 - GIMME_OS=linux GIMME_ARCH=amd64 CGO_ENABLED=0
 gobuild_args: -tags netgo
